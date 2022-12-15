@@ -1,0 +1,6 @@
+domain: tagesspiegel.de
+layout:
+- go.kubebuilder.io/v3
+projectName: kubernetes-passbolt-operator
+repo: github.com/urbanmedia/passbolt-operator
+version: "3"
