@@ -25,21 +25,54 @@ import (
 
 // PassboltSecretSpec defines the desired state of PassboltSecret
 type PassboltSecretSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Secrets is a list of secrets to be fetched from passbolt.
+	// +kubebuilder:validation:Required
+	Secrets []SecretSpec `json:"secrets"`
+}
 
-	// Foo is an example field of PassboltSecret. Edit passboltsecret_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// SecretSpec defines the secret mapping between passbolt and kubernetes.
+type SecretSpec struct {
+	// Name of the secret in passbolt
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// KubernetesSecretKey is the key in the kubernetes secret where the passbolt secret will be stored.
+	// +kubebuilder:validation:Required
+	KubernetesSecretKey string `json:"kubernetesSecretKey"`
+}
+
+type SyncStatus string
+
+const (
+	SyncStatusSuccess SyncStatus = "Success"
+	SyncStatusError   SyncStatus = "Error"
+	SyncStatusUnknown SyncStatus = "Unknown"
+)
+
+type SyncError struct {
+	// Message is the error message.
+	Message string `json:"message"`
+	// SecretName is the name of the secret that failed to sync.
+	SecretName string `json:"secretName"`
+	// SecretKey is the key of the secret that failed to sync.
+	SecretKey string `json:"secretKey"`
 }
 
 // PassboltSecretStatus defines the observed state of PassboltSecret
 type PassboltSecretStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// SyncStatus is the status of the last sync.
+	// +kubebuilder:validation:Enum=Success;Error;Unknown
+	// +kubebuilder:default=Unknown
+	SyncStatus SyncStatus `json:"syncStatus"`
+	// LastSync is the last time the secret was synced from passbolt.
+	LastSync metav1.Time `json:"lastSync"`
+	// SyncErrors is a list of errors that occurred during the last sync.
+	SyncErrors []SyncError `json:"syncErrors,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.syncStatus`
+// +kubebuilder:printcolumn:name="Last Sync",type=string,JSONPath=`.status.lastSync`
 
 // PassboltSecret is the Schema for the passboltsecrets API
 type PassboltSecret struct {
