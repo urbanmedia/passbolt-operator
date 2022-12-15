@@ -71,3 +71,11 @@ The Passbolt Operator can be configured with the following environement variable
 - [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) >= v3.7
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/) >= v1.25
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/) >= v0.17
+
+### Create another API (Version)
+
+Kubebuilder allows you to bootstrap a new API Version. To do so, you need to run the following command:
+
+```bash
+kubebuilder create api --group passbolt --version v1alpha1 --kind PassboltSecret
+```
