@@ -157,7 +157,18 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// set owner reference
 		err = ctrl.SetControllerReference(secret, k8sSecret, r.Scheme)
 		if err != nil {
-			return ctrl.Result{}, err
+			secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
+			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
+				Message: fmt.Sprintf("failed to set controller reference to secret %s.%s: %s", req.Name, req.Namespace, err.Error()),
+				Time:    metav1.Now(),
+			})
+			err2 := updateStatus(ctx2, secret)
+			if err2 != nil {
+				// if the status update fails, we do not want to return the error
+				logr.Error(err2, "unable to update PassboltSecret status")
+				return ctrl.Result{}, nil
+			}
+			return ctrl.Result{}, nil
 		}
 	}
 
@@ -230,5 +241,6 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 func (r *PassboltSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&passboltv1alpha1.PassboltSecret{}).
+		Owns(&corev1.Secret{}).
 		Complete(r)
 }
