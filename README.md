@@ -79,3 +79,38 @@ Kubebuilder allows you to bootstrap a new API Version. To do so, you need to run
 ```bash
 kubebuilder create api --group passbolt --version v1alpha1 --kind PassboltSecret
 ```
+
+### Start the Operator
+
+Since the Operator requires a running instance of Passbolt, we will use the [Passbolt Docker image](https://hub.docker.com/r/passbolt/passbolt) to start a Passbolt instance. To start the Passbolt instance, you need to run the following command:
+
+```bash
+docker-compose up -d
+```
+
+When the Passbolt instance is up and running, the second step would be to expose the Passbolt instance credentials to the Operator. To do so, you need to run the following command:
+
+```bash
+./_data/credentials.sh
+```
+
+The last step would be to start the Operator. To do so, you need to run the following command:
+
+```bash
+make run
+```
+
+### Create a User in Passbolt
+
+To create a user in Passbolt, you need to run the following command:
+
+```bash
+docker exec -ti passbolt /usr/share/php/passbolt/bin/cake \
+  passbolt register_user \
+  -u user.example@mydomain.local \
+  -f user \
+  -l example \
+  -r admin
+```
+
+We already created a user with the above command. You can retrieve the password and the GPG key from the _data/credentials.sh file.
