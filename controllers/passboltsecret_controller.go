@@ -65,12 +65,18 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// FIXME: pass real values to the passbolt client
 	// create passbolt client
-	clnt, err := passbolt.NewClient(ctx, "", "", "")
+	clnt, err := passbolt.NewClient(ctx2, os.Getenv("PASSBOLT_URL"), os.Getenv("PASSBOLT_USERNAME"), os.Getenv("PASSBOLT_PASSWORD"))
 	if err != nil {
 		logr.Error(err, "unable to create passbolt client")
 		return ctrl.Result{}, err
 	}
-	defer clnt.Close(ctx)
+	defer clnt.Close(ctx2)
+
+	err = clnt.LoadCache(ctx2)
+	if err != nil {
+		// if the cache load fails, we do not want to return the error
+		return ctrl.Result{}, nil
+	}
 
 	// retrieve secrets from passbolt and store them in Kubernetes secrets
 	k8sSecret := &corev1.Secret{
@@ -80,21 +86,22 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			Labels:      secret.Labels,
 			Annotations: secret.Annotations,
 		},
+		StringData: map[string]string{},
 	}
-	for _, secret := range secret.Spec.Secrets {
-		secretData, err := clnt.GetSecret(ctx, secret.Name)
+	for _, scrt := range secret.Spec.Secrets {
+		secretData, err := clnt.GetSecret(ctx, scrt.Name)
 		if err != nil {
 			logr.Error(err, "unable to retrieve secret from passbolt")
 			return ctrl.Result{}, err
 		}
-		k8sSecret.StringData[secret.KubernetesSecretKey] = secretData
+		k8sSecret.StringData[scrt.KubernetesSecretKey] = secretData
 	}
 
 	// check if the secret already exists
 	err = r.Client.Get(ctx, req.NamespacedName, &corev1.Secret{})
-	if err != nil && errors.IsNotFound(err) {
-		// fail if the error is not a not found error
-		return ctrl.Result{}, fmt.Errorf("unable to retrieve secret from kubernetes: %w", err)
+	if err != nil && !errors.IsNotFound(err) {
+		// if the secret cannot be retrieved, we do not want to return the error
+		return ctrl.Result{}, nil
 	}
 	// check if the secret already exists
 	if errors.IsNotFound(err) {
