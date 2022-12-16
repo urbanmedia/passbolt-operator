@@ -55,6 +55,8 @@ type SyncError struct {
 	SecretName string `json:"secretName"`
 	// SecretKey is the key of the secret that failed to sync.
 	SecretKey string `json:"secretKey"`
+	// Time is the time the error occurred.
+	Time metav1.Time `json:"time"`
 }
 
 // PassboltSecretStatus defines the observed state of PassboltSecret
