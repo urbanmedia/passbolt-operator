@@ -152,6 +152,15 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		k8sSecret.StringData[scrt.KubernetesSecretKey] = secretData
 	}
 
+	// set owner reference if LeaveOnDelete was set to false
+	if !secret.Spec.LeaveOnDelete {
+		// set owner reference
+		err = ctrl.SetControllerReference(secret, k8sSecret, r.Scheme)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	// check if the secret already exists
 	err = r.Client.Get(ctx, req.NamespacedName, &corev1.Secret{})
 	if err != nil && !errors.IsNotFound(err) {
