@@ -4,14 +4,23 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/passbolt/go-passbolt/api"
 	"github.com/passbolt/go-passbolt/helper"
 )
 
+// Client is a passbolt client.
+// It is used to retrieve secrets from passbolt.
+// Internally, we cache the secret names and IDs to avoid unnecessary API calls.
+// This is necessary because the passbolt API does not allow for searching secrets by name.
+// Instead, we must retrieve all secrets and their UUIDs.
+// This is not ideal, but it is the only way to retrieve secrets by name.
 type Client struct {
+	// passboltClient is the underlying passbolt client.
 	passboltClient *api.Client
-
+	// mu is used to prevent concurrent access to the secret cache.
+	mu sync.RWMutex
 	// secretCache represents a cache of NAME -> UUID mappings.
 	// This is used to avoid unnecessary API calls.
 	secretCache map[string]string
@@ -31,6 +40,7 @@ func NewClient(ctx context.Context, url, username, password string) (*Client, er
 	return &Client{
 		passboltClient: clnt,
 		secretCache:    map[string]string{},
+		mu:             sync.RWMutex{},
 	}, nil
 }
 
@@ -40,6 +50,10 @@ func NewClient(ctx context.Context, url, username, password string) (*Client, er
 // Instead, we must retrieve all secrets and their UUIDs.
 // This is not ideal, but it is the only way to retrieve secrets by name.
 func (c *Client) LoadCache(ctx context.Context) error {
+	// prevent concurrent access to the cache
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	// retrieve all secrets
 	resources, err := c.passboltClient.GetResources(ctx, &api.GetResourcesOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get secrets: %w", err)
@@ -53,12 +67,18 @@ func (c *Client) LoadCache(ctx context.Context) error {
 // Close logs out of the passbolt client.
 // This should be called when the client is no longer needed.
 func (c *Client) Close(ctx context.Context) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.passboltClient.Logout(ctx)
 }
 
 // GetSecret retrieves the secret value for the given secret ID.
 // The secret value is returned as a string.
 func (c *Client) GetSecret(ctx context.Context, name string) (string, error) {
+	// prevent concurrent access to the cache
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	// check if the secret is in the cache
 	if _, ok := c.secretCache[name]; !ok {
 		return "", fmt.Errorf("unable to find secret in cache with name %q", name)
 	}
