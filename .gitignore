@@ -17,3 +17,6 @@
 bin/
 
 .envrc
+
+# ignore changes to the data folder
+_data/
