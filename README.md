@@ -114,3 +114,39 @@ docker exec -ti passbolt /usr/share/php/passbolt/bin/cake \
 ```
 
 We already created a user with the above command. You can retrieve the password and the GPG key from the _data/credentials.sh file.
+
+### Test the Operator
+
+In order to run the end-to-end and unit tests, we need to start passbolt locally. To do so, you need to run the following command:
+
+```bash
+docker-compose up -d
+```
+
+When the Passbolt instance is up and running, the second step would be to execute the end-to-end and unit tests. To do so, you need to run the following command:
+
+```bash
+make test
+```
+
+## Contributing
+
+### Code of Conduct
+
+This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [//TODO].
+
+### Contributing Guide
+
+If you want to contribute to this project, please read the [Contributing Guide](CONTRIBUTING.md).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## Security
+
+If you discover a security vulnerability within this project, please send an e-mail to [//TODO] instead of using the issue tracker. All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
+
+## Support
+
+If you need help with Passbolt, please contact [Passbolt Support](https://www.passbolt.com/support).
