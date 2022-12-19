@@ -1,0 +1,17 @@
+_data/pb_db/mysql_upgrade_info filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/aria_log_control filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/ib_buffer_pool filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/ibdata1 filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/ib_logfile0 filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/ib_logfile1 filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/multi-master.info filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/mysql filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/tc.log filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/aria_log.00000001 filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/ibtmp1 filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/passbolt filter=lfs diff=lfs merge=lfs -text
+_data/pb_db/performance_schema filter=lfs diff=lfs merge=lfs -text
+_data/pb_gpg/serverkey.asc filter=lfs diff=lfs merge=lfs -text
+_data/pb_gpg/serverkey_private.asc filter=lfs diff=lfs merge=lfs -text
+_data/pb_jwt/jwt.key filter=lfs diff=lfs merge=lfs -text
+_data/pb_jwt/jwt.pem filter=lfs diff=lfs merge=lfs -text
