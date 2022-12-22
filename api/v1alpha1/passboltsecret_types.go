@@ -38,10 +38,29 @@ type PassboltSecretSpec struct {
 type SecretSpec struct {
 	// Name of the secret in passbolt
 	// +kubebuilder:validation:Required
-	Name string `json:"name"`
+	PassboltSecret PassboltSpec `json:"passboltSecret"`
 	// KubernetesSecretKey is the key in the kubernetes secret where the passbolt secret will be stored.
 	// +kubebuilder:validation:Required
 	KubernetesSecretKey string `json:"kubernetesSecretKey"`
+}
+
+type FieldName string
+
+const (
+	FieldNameUsername FieldName = "username"
+	FieldNamePassword FieldName = "password"
+	FieldNameUri      FieldName = "uri"
+)
+
+type PassboltSpec struct {
+	// Name of the secret in passbolt
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// Field is the field in the passbolt secret to be read.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=username;password;uri
+	// +kubebuilder:default=password
+	Field string `json:"field"`
 }
 
 type SyncStatus string
