@@ -3,6 +3,8 @@ package passbolt
 import (
 	"context"
 	"testing"
+
+	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 )
 
 const (
@@ -267,8 +269,9 @@ func TestClient_GetSecret(t *testing.T) {
 		client *Client
 	}
 	type args struct {
-		ctx  context.Context
-		name string
+		ctx   context.Context
+		name  string
+		field passboltv1alpha1.FieldName
 	}
 	tests := []struct {
 		name    string
@@ -278,7 +281,7 @@ func TestClient_GetSecret(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "happy path",
+			name: "happy path username",
 			fields: fields{
 				client: func() *Client {
 					clnt, err := NewClient(
@@ -294,10 +297,59 @@ func TestClient_GetSecret(t *testing.T) {
 				}(),
 			},
 			args: args{
-				ctx:  context.Background(),
-				name: "APP_EXAMPLE_DATABASE_PASSWORD",
+				ctx:   context.Background(),
+				name:  "APP_EXAMPLE",
+				field: passboltv1alpha1.FieldNameUsername,
 			},
-			want:    "postgres",
+			want:    "admin",
+			wantErr: false,
+		},
+		{
+			name: "happy path password",
+			fields: fields{
+				client: func() *Client {
+					clnt, err := NewClient(
+						context.Background(),
+						passboltURL,
+						passboltUsername,
+						passboltPassword)
+					if err != nil {
+						t.Errorf("failed to create passbolt client: %v", err)
+						return nil
+					}
+					return clnt
+				}(),
+			},
+			args: args{
+				ctx:   context.Background(),
+				name:  "APP_EXAMPLE",
+				field: passboltv1alpha1.FieldNamePassword,
+			},
+			want:    "admin",
+			wantErr: false,
+		},
+		{
+			name: "happy path uri",
+			fields: fields{
+				client: func() *Client {
+					clnt, err := NewClient(
+						context.Background(),
+						passboltURL,
+						passboltUsername,
+						passboltPassword)
+					if err != nil {
+						t.Errorf("failed to create passbolt client: %v", err)
+						return nil
+					}
+					return clnt
+				}(),
+			},
+			args: args{
+				ctx:   context.Background(),
+				name:  "APP_EXAMPLE",
+				field: passboltv1alpha1.FieldNameUri,
+			},
+			want:    "https://app.example.com",
 			wantErr: false,
 		},
 		{
@@ -334,7 +386,7 @@ func TestClient_GetSecret(t *testing.T) {
 				return
 			}
 
-			got, err := c.GetSecret(tt.args.ctx, tt.args.name)
+			got, err := c.GetSecret(tt.args.ctx, tt.args.name, tt.args.field)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Client.GetSecret() error = %v, wantErr %v\nCache data:\n%+v", err, tt.wantErr, tt.fields.client.secretCache)
 				return

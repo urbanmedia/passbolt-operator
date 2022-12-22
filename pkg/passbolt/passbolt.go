@@ -8,6 +8,7 @@ import (
 
 	"github.com/passbolt/go-passbolt/api"
 	"github.com/passbolt/go-passbolt/helper"
+	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 )
 
 // Client is a passbolt client.
@@ -74,7 +75,7 @@ func (c *Client) Close(ctx context.Context) error {
 
 // GetSecret retrieves the secret value for the given secret ID.
 // The secret value is returned as a string.
-func (c *Client) GetSecret(ctx context.Context, name string) (string, error) {
+func (c *Client) GetSecret(ctx context.Context, name string, fieldName passboltv1alpha1.FieldName) (string, error) {
 	// prevent concurrent access to the cache
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -83,9 +84,19 @@ func (c *Client) GetSecret(ctx context.Context, name string) (string, error) {
 		return "", fmt.Errorf("unable to find secret in cache with name %q", name)
 	}
 	// retrieve the secret
-	_, _, _, _, pw, _, err := helper.GetResource(ctx, c.passboltClient, c.secretCache[name])
+	_, _, username, uri, pw, _, err := helper.GetResource(ctx, c.passboltClient, c.secretCache[name])
 	if err != nil {
 		return "", fmt.Errorf("failed to get secret with name %q: %w", name, err)
 	}
-	return pw, nil
+
+	switch fieldName {
+	case passboltv1alpha1.FieldNameUsername:
+		return username, nil
+	case passboltv1alpha1.FieldNameUri:
+		return uri, nil
+	case passboltv1alpha1.FieldNamePassword:
+		return pw, nil
+	default:
+		return "", fmt.Errorf("unknown field name %q", fieldName)
+	}
 }
