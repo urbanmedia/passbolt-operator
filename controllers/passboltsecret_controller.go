@@ -131,13 +131,13 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		StringData: map[string]string{},
 	}
 	for _, scrt := range secret.Spec.Secrets {
-		secretData, err := clnt.GetSecret(ctx, scrt.Name)
+		secretData, err := clnt.GetSecret(ctx, scrt.PassboltSecret.Name, scrt.PassboltSecret.Field)
 		if err != nil {
 			secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
 			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
-				Message:    fmt.Sprintf("unable to GET secret %s from passbolt: %s", scrt.Name, err.Error()),
+				Message:    fmt.Sprintf("unable to GET secret %q.%q from passbolt: %s", scrt.PassboltSecret.Name, scrt.PassboltSecret.Field, err.Error()),
 				Time:       metav1.Now(),
-				SecretName: scrt.Name,
+				SecretName: scrt.PassboltSecret.Name,
 				SecretKey:  scrt.KubernetesSecretKey,
 			})
 			err2 := updateStatus(ctx2, secret)
