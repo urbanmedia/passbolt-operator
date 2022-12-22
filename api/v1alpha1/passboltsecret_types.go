@@ -60,7 +60,7 @@ type PassboltSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=username;password;uri
 	// +kubebuilder:default=password
-	Field string `json:"field"`
+	Field FieldName `json:"field"`
 }
 
 type SyncStatus string
