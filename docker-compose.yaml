@@ -14,6 +14,19 @@ services:
     volumes:
       - ./_data/pb_db:/var/lib/mysql
 
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - PMA_USER=passbolt
+      - PMA_PASSWORD=P4ssb0lt
+    networks:
+      - passbolt
+    ports:
+      - 8089:80
+
   passbolt:
     image: passbolt/passbolt:latest-ce-non-root
     restart: unless-stopped
