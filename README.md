@@ -58,9 +58,8 @@ TODO
 The Passbolt Operator can be configured with the following environement variables:
 
 - `PASSBOLT_URL`: The URL of the Passbolt instance.
-- `PASSBOLT_USERNAME`: The username of the Passbolt user.
+- `PASSBOLT_GPG`: The GPG key to identify the user.
 - `PASSBOLT_PASSWORD`: The password of the Passbolt user.
-- `PASSBOLT_KEY`: The key of the Passbolt user.
 
 ## Development
 
