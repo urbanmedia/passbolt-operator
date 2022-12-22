@@ -85,7 +85,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// FIXME: pass real values to the passbolt client
 	// create passbolt client
-	clnt, err := passbolt.NewClient(ctx2, os.Getenv("PASSBOLT_URL"), os.Getenv("PASSBOLT_USERNAME"), os.Getenv("PASSBOLT_PASSWORD"))
+	clnt, err := passbolt.NewClient(ctx2, os.Getenv("PASSBOLT_URL"), os.Getenv("PASSBOLT_GPG"), os.Getenv("PASSBOLT_PASSWORD"))
 	if err != nil {
 		secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
 		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
