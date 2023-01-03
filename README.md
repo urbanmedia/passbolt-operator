@@ -1,5 +1,7 @@
 # Kubernetes Passbolt Operator
 
+[![unit-and-e2e-tests](https://github.com/leonsteinhaeuser/passbolt-operator/actions/workflows/tests.yaml/badge.svg)](https://github.com/leonsteinhaeuser/passbolt-operator/actions/workflows/tests.yaml)
+
 This repository contains the Kubernetes Operator for Passbolt. Passbolt is an open source password manager for teams. It is a self-hosted solution that allows you to manage your passwords securely and share them with your team. The Passbolt Operator is a Kubernetes Operator that allows you to synchronize your Passbolt credentials with Kubernetes Secrets. It is based on [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) framework.
 
 ## Getting Started
