@@ -16,6 +16,9 @@ on:
       - hack/
       - Makefile
       - PROJECT
+  pull_request:
+    branches:
+      - "!dependabot/**"
 
 env:
   go_version: 1.19
