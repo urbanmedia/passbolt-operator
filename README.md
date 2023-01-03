@@ -16,14 +16,17 @@ metadata:
   namespace: default
 spec:
   secrets:
-    - name: PASSBOLT_SECRET_NAME # The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
-      kubernetesSecretKey: KUBERNETES_SECRET_KEY # The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential.
+    - kubernetesSecretKey: "" # The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential.
+      passboltSecret:
+        name: "" # The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
+        field: username # The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
 ```
 
 The `PassboltSecret` resource contains the following fields:
 
 - `secrets`: A list of Passbolt credentials that you want to synchronize with Kubernetes Secrets. Each Passbolt credential is defined by the following fields:
-  - `name`: The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
+  - `passboltSecret.name`: The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
+  - `passboltSecret.field`: The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
   - `kubernetesSecretKey`: The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential.
 
 The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets. The Passbolt Operator will create a Kubernetes Secret with the name `passbolt-secret-name` in the namespace `default`. The resulting Kubernetes Secret is defined as follows:
@@ -42,10 +45,8 @@ data:
 Under the hood, the Passbolt Operator does the following during the reconciliation loop:
 
 1. Retrieve the Passbolt CRD from Kubernetes.
-2. Create a Passbolt client with only `read` permissions to retrieve the `secrets[*].name` credentials.
-3. Retrieve the `secrets[*].name` credentials from Passbolt.
-4. Create a Kubernetes secret with the name `passbolt-secret-name` in the namespace `default` with the `secrets[*].kubernetesSecretKey` key and the `secrets[*].name` value.
-5. Delete the Passbolt client.
+2. Retrieve the `secrets[*].name` credentials from Passbolt.
+3. Create a Kubernetes secret with the name `passbolt-secret-name` in the namespace `default` with the `secrets[*].kubernetesSecretKey` key and the `secrets[*].name` value.
 
 If an error occurs during the reconciliation loop, the Passbolt Operator will retry to reconcile the `PassboltSecret` after 30 seconds and increments the `status.reconcileErrorCount` field. If the `status.reconcileErrorCount` field is greater than 5, the Passbolt Operator will stop reconciling the `PassboltSecret` for a period of 30 minutes (except configuration changes).
 
