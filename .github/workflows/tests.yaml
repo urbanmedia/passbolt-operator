@@ -1,0 +1,71 @@
+name: unit-and-apitests
+
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - "*.md"
+      - LICENSE
+      - docker-compose*
+      - .dockerignore
+      - .github/
+      - .gitignore
+      - .gitmodules
+      - docs/
+      - hack/
+      - Makefile
+      - PROJECT
+
+env:
+  go_version: 1.19
+
+jobs:
+  vetting-and-formatting:
+    name: vetting and formatting
+    runs-on: [self-hosted, type=small]
+    steps:
+      - name: Install go ${{ env.go_version }}
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run go fmt
+        run: go fmt ./...
+
+  unit-tests:
+    name: test the go code
+    runs-on: [self-hosted, type=small]
+    needs:
+      - vetting-and-formatting
+    strategy:
+      fail-fast: true
+      matrix:
+        kind_node_image:
+          - kindest/node:v1.25.3
+          - kindest/node:v1.24.7
+          - kindest/node:v1.23.13
+          - kindest/node:v1.22.15
+          - kindest/node:v1.21.14
+    steps:
+      - name: Install go ${{ env.go_version }}
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create K8s Kind Cluster
+        uses: helm/kind-action@v1.5.0
+        with:
+          node_image: ${{ matrix.kind_node_image }}
+
+      - name: Run unit tests
+        run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
