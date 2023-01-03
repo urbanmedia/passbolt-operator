@@ -23,7 +23,7 @@ env:
 jobs:
   vetting-and-formatting:
     name: vetting and formatting
-    runs-on: [self-hosted, type=small]
+    runs-on: ubuntu-latest
     steps:
       - name: Install go ${{ env.go_version }}
         uses: actions/setup-go@v3
@@ -41,7 +41,7 @@ jobs:
 
   unit-tests:
     name: test the go code
-    runs-on: [self-hosted, type=small]
+    runs-on: ubuntu-latest
     needs:
       - vetting-and-formatting
     strategy:
