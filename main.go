@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -33,6 +35,7 @@ import (
 
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	"github.com/urbanmedia/passbolt-operator/controllers"
+	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -89,9 +92,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	// create context with timeout for passbolt client
+	ctx, cf := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cf()
+
+	// create passbolt client
+	clnt, err := passbolt.NewClient(ctx, os.Getenv("PASSBOLT_URL"), os.Getenv("PASSBOLT_GPG"), os.Getenv("PASSBOLT_PASSWORD"))
+	if err != nil {
+		setupLog.Error(err, "unable to create passbolt client")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.PassboltSecretReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+		PassboltClient: clnt,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PassboltSecret")
 		os.Exit(1)

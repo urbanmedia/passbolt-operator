@@ -19,8 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"os"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,7 +36,8 @@ import (
 // PassboltSecretReconciler reconciles a PassboltSecret object
 type PassboltSecretReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme         *runtime.Scheme
+	PassboltClient *passbolt.Client
 }
 
 //+kubebuilder:rbac:groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=get;list;watch;create;update;patch;delete
@@ -58,6 +57,8 @@ type PassboltSecretReconciler struct {
 func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logr := log.FromContext(ctx)
 
+	logr.Info("reconciling PassboltSecret", "name", req.NamespacedName)
+
 	secret := &passboltv1alpha1.PassboltSecret{}
 	err := r.Client.Get(ctx, req.NamespacedName, secret)
 	if err != nil {
@@ -67,11 +68,6 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 	// cleanup status
 	secret.Status.SyncErrors = []passboltv1alpha1.SyncError{}
-
-	// create context with timeout
-	// TODO: make timeout configurable
-	ctx2, cf := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cf()
 
 	// create status update function
 	updateStatus := func(ctx context.Context, passboltSecret *passboltv1alpha1.PassboltSecret) error {
@@ -83,34 +79,14 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return nil
 	}
 
-	// FIXME: pass real values to the passbolt client
-	// create passbolt client
-	clnt, err := passbolt.NewClient(ctx2, os.Getenv("PASSBOLT_URL"), os.Getenv("PASSBOLT_GPG"), os.Getenv("PASSBOLT_PASSWORD"))
-	if err != nil {
-		secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
-		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
-			Message: fmt.Sprintf("unable to create passbolt client: %s", err.Error()),
-			Time:    metav1.Now(),
-		})
-		err2 := updateStatus(ctx2, secret)
-		if err2 != nil {
-			// if the status update fails, we do not want to return the error
-			logr.Error(err2, "unable to update PassboltSecret status")
-			return ctrl.Result{}, nil
-		}
-		logr.Error(err, "unable to create passbolt client")
-		return ctrl.Result{}, err
-	}
-	defer clnt.Close(ctx2)
-
-	err = clnt.LoadCache(ctx2)
+	err = r.PassboltClient.LoadCache(ctx)
 	if err != nil {
 		secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
 		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
 			Message: fmt.Sprintf("unable to load cache: %s", err.Error()),
 			Time:    metav1.Now(),
 		})
-		err2 := updateStatus(ctx2, secret)
+		err2 := updateStatus(ctx, secret)
 		if err2 != nil {
 			// if the status update fails, we do not want to return the error
 			logr.Error(err2, "unable to update PassboltSecret status")
@@ -131,7 +107,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		StringData: map[string]string{},
 	}
 	for _, scrt := range secret.Spec.Secrets {
-		secretData, err := clnt.GetSecret(ctx, scrt.PassboltSecret.Name, scrt.PassboltSecret.Field)
+		secretData, err := r.PassboltClient.GetSecret(ctx, scrt.PassboltSecret.Name, scrt.PassboltSecret.Field)
 		if err != nil {
 			secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
 			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
@@ -140,7 +116,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				SecretName: scrt.PassboltSecret.Name,
 				SecretKey:  scrt.KubernetesSecretKey,
 			})
-			err2 := updateStatus(ctx2, secret)
+			err2 := updateStatus(ctx, secret)
 			if err2 != nil {
 				// if the status update fails, we do not want to return the error
 				logr.Error(err2, "unable to update PassboltSecret status")
@@ -162,7 +138,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				Message: fmt.Sprintf("failed to set controller reference to secret %s.%s: %s", req.Name, req.Namespace, err.Error()),
 				Time:    metav1.Now(),
 			})
-			err2 := updateStatus(ctx2, secret)
+			err2 := updateStatus(ctx, secret)
 			if err2 != nil {
 				// if the status update fails, we do not want to return the error
 				logr.Error(err2, "unable to update PassboltSecret status")
@@ -180,7 +156,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			Message: fmt.Sprintf("unable to GET secret %q.%q from Kubernetes: %s", req.Name, req.Namespace, err.Error()),
 			Time:    metav1.Now(),
 		})
-		err2 := updateStatus(ctx2, secret)
+		err2 := updateStatus(ctx, secret)
 		if err2 != nil {
 			// if the status update fails, we do not want to return the error
 			logr.Error(err2, "unable to update PassboltSecret status")
@@ -198,7 +174,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				Message: fmt.Sprintf("unable to CREATE secret %q.%q from Kubernetes: %s", k8sSecret.GetName(), k8sSecret.GetNamespace(), err.Error()),
 				Time:    metav1.Now(),
 			})
-			err2 := updateStatus(ctx2, secret)
+			err2 := updateStatus(ctx, secret)
 			if err2 != nil {
 				// if the status update fails, we do not want to return the error
 				logr.Error(err2, "unable to update PassboltSecret status")
@@ -216,7 +192,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			Message: fmt.Sprintf("unable to UPDATE secret %q.%q from Kubernetes: %s", k8sSecret.GetName(), k8sSecret.GetNamespace(), err.Error()),
 			Time:    metav1.Now(),
 		})
-		err2 := updateStatus(ctx2, secret)
+		err2 := updateStatus(ctx, secret)
 		if err2 != nil {
 			// if the status update fails, we do not want to return the error
 			logr.Error(err2, "unable to update PassboltSecret status")
