@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -33,12 +35,14 @@ import (
 
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	"github.com/urbanmedia/passbolt-operator/controllers"
+	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	//+kubebuilder:scaffold:imports
 )
 
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+	cacheLog = ctrl.Log.WithName("cache")
 )
 
 func init() {
@@ -89,9 +93,54 @@ func main() {
 		os.Exit(1)
 	}
 
+	// create context with timeout for passbolt client
+	ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cf()
+
+	// create passbolt client
+	clnt, err := passbolt.NewClient(ctx, os.Getenv("PASSBOLT_URL"), os.Getenv("PASSBOLT_GPG"), os.Getenv("PASSBOLT_PASSWORD"))
+	if err != nil {
+		setupLog.Error(err, "unable to create passbolt client")
+		os.Exit(1)
+	}
+
+	// initial cache load
+	err = clnt.LoadCache(ctx)
+	if err != nil {
+		setupLog.Error(err, "unable to load passbolt cache")
+		os.Exit(1)
+	}
+
+	// fill passbolt cache with existing secrets
+	// ticker is set to 5 minutes
+	ticker := time.NewTicker(5 * time.Minute)
+	done := make(chan bool)
+	defer func() {
+		ticker.Stop()
+		done <- true
+	}()
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				cacheLog.Info("loading passbolt cache")
+				ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cf()
+				err := clnt.LoadCache(ctx)
+				if err != nil {
+					cacheLog.Error(err, "unable to load passbolt cache")
+					// we don't exit here, because we want to continue with the next tick
+				}
+			}
+		}
+	}()
+
 	if err = (&controllers.PassboltSecretReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+		PassboltClient: clnt,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PassboltSecret")
 		os.Exit(1)

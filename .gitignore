@@ -15,3 +15,9 @@
 # vendor/
 
 bin/
+
+.envrc
+
+# ignore changes to the data folder
+_data/
+!_data/credentials.sh
