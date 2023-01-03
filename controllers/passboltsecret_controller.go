@@ -79,23 +79,6 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return nil
 	}
 
-	err = r.PassboltClient.LoadCache(ctx)
-	if err != nil {
-		secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
-		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
-			Message: fmt.Sprintf("unable to load cache: %s", err.Error()),
-			Time:    metav1.Now(),
-		})
-		err2 := updateStatus(ctx, secret)
-		if err2 != nil {
-			// if the status update fails, we do not want to return the error
-			logr.Error(err2, "unable to update PassboltSecret status")
-			return ctrl.Result{}, nil
-		}
-		// if the cache load fails, we do not want to return the error
-		return ctrl.Result{}, nil
-	}
-
 	// retrieve secrets from passbolt and store them in Kubernetes secrets
 	k8sSecret := &corev1.Secret{
 		ObjectMeta: ctrl.ObjectMeta{

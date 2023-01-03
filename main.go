@@ -42,6 +42,7 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+	cacheLog = ctrl.Log.WithName("cache")
 )
 
 func init() {
@@ -93,7 +94,7 @@ func main() {
 	}
 
 	// create context with timeout for passbolt client
-	ctx, cf := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cf()
 
 	// create passbolt client
@@ -102,6 +103,39 @@ func main() {
 		setupLog.Error(err, "unable to create passbolt client")
 		os.Exit(1)
 	}
+
+	// initial cache load
+	err = clnt.LoadCache(ctx)
+	if err != nil {
+		setupLog.Error(err, "unable to load passbolt cache")
+		os.Exit(1)
+	}
+
+	// fill passbolt cache with existing secrets
+	// ticker is set to 5 minutes
+	ticker := time.NewTicker(5 * time.Minute)
+	done := make(chan bool)
+	defer func() {
+		ticker.Stop()
+		done <- true
+	}()
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				cacheLog.Info("loading passbolt cache")
+				ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cf()
+				err := clnt.LoadCache(ctx)
+				if err != nil {
+					cacheLog.Error(err, "unable to load passbolt cache")
+					// we don't exit here, because we want to continue with the next tick
+				}
+			}
+		}
+	}()
 
 	if err = (&controllers.PassboltSecretReconciler{
 		Client:         mgr.GetClient(),
