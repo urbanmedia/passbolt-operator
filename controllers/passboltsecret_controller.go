@@ -62,9 +62,10 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	secret := &passboltv1alpha1.PassboltSecret{}
 	err := r.Client.Get(ctx, req.NamespacedName, secret)
 	if err != nil {
-		// If the resource no longer exists, in which case we stop processing.
-		logr.Error(err, "unable to fetch PassboltSecret")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if err = client.IgnoreNotFound(err); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
 	}
 	// cleanup status
 	secret.Status.SyncErrors = []passboltv1alpha1.SyncError{}
@@ -192,6 +193,8 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// we don't return an error here, as the secret was successfully synced
 		return ctrl.Result{}, nil
 	}
+
+	logr.Info("reconcile complete", "name", req.NamespacedName)
 
 	return ctrl.Result{}, nil
 }
