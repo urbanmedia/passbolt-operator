@@ -67,5 +67,8 @@ jobs:
         with:
           node_image: ${{ matrix.kind_node_image }}
 
+      - name: Start Passbolt
+        run: docker-compose up -d
+
       - name: Run unit tests
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
