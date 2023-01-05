@@ -54,7 +54,23 @@ If an error occurs during the reconciliation loop, the Passbolt Operator will re
 
 ### Installation
 
-TODO
+For both installation methods, you need to create a Kubernetes Secret with the Passbolt credentials. To do so, you need to run the following command:
+
+```bash
+kubectl create secret generic controller-passbolt-secret \
+  --from-files=gpg_key='/path/to/my/gpg.key' \
+  --from-literal=password='<my-user-password>' \
+  --from-literal=url='<my-passbolt-url>' \
+  --namespace system
+```
+
+#### Kustomize
+
+// TODO
+
+#### Helm
+
+// TODO
 
 ### Configuration
 
