@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -ex
+
+export PASSBOLT_URL="http://localhost:8088"
+export PASSBOLT_PASSWORD="TestTest123!"
 export PASSBOLT_GPG="-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xcTGBGOk118BDACpb7iRZP8WcZsUxUKVLmYWnx1yLtm47R1xhMkWqUL7FL2+
@@ -88,5 +92,3 @@ WYKeqpp78QEl8XCTOBMmOZduLFiUJ+9ZFKeErLurlkoyrymnL+xSaBuTa/V0
 hsyXBbUvHYeSbmxi1mixsT7ry3UDZkqvnr0I0CDsIt33L/LbJ15pxKJJgBgf
 =jwOw
 -----END PGP PRIVATE KEY BLOCK-----"
-export PASSBOLT_PASSWORD="TestTest123!"
-export PASSBOLT_URL="http://localhost:8088"
