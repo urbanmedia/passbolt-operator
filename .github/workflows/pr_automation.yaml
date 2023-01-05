@@ -17,12 +17,12 @@ jobs:
         with:
           sizes: >
             {
-              "0": "size/XS",
-              "50": "size/S",
-              "250": "size/M",
-              "500": "size/L",
-              "1000": "size/XL",
-              "2000": "size/XXL"
+              "0": "XS",
+              "50": "S",
+              "250": "M",
+              "500": "L",
+              "1000": "XL",
+              "2000": "XXL"
             }
 
   pr-labeler:
