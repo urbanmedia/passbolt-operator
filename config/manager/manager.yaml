@@ -98,5 +98,21 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+        env:
+          - name: PASSBOLT_URL
+            valueFrom:
+              secretKeyRef:
+                name: controller-passbolt-secret
+                key: url
+          - name: PASSBOLT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: controller-passbolt-secret
+                key: password
+          - name: PASSBOLT_GPG
+            valueFrom:
+              secretKeyRef:
+                name: controller-passbolt-secret
+                key: gpg_key
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
