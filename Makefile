@@ -58,6 +58,10 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out -covermode=atomic
 
+.PHONY: coverhtml
+coverhtml: ## Display test coverage in html
+	go tool cover -html=cover.out
+
 ##@ Build
 
 .PHONY: build
