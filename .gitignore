@@ -16,6 +16,7 @@
 
 bin/
 
+.env
 .envrc
 
 # ignore changes to the data folder
