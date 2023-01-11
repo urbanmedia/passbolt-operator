@@ -24,29 +24,49 @@ env:
   go_version: 1.19
 
 jobs:
-  vetting-and-formatting:
-    name: vetting and formatting
+  vetting:
     runs-on: ubuntu-latest
     steps:
-      - name: Install go ${{ env.go_version }}
-        uses: actions/setup-go@v3
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: true
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go_version }}
 
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Run go vet
+      - name: vetting
+        shell: bash
         run: go vet ./...
 
-      - name: Run go fmt
-        run: go fmt ./...
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: true
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=3m --issues-exit-code=0 ./...
+          only-new-issues: true
 
   unit-tests:
     name: test the go code
     runs-on: ubuntu-latest
     needs:
-      - vetting-and-formatting
+      - vetting
+      - linting
     strategy:
       fail-fast: true
       matrix:
@@ -56,6 +76,8 @@ jobs:
           - kindest/node:v1.23.13
           - kindest/node:v1.22.15
           - kindest/node:v1.21.14
+    env:
+      LOG_DIR: logs
     steps:
       - name: Install go ${{ env.go_version }}
         uses: actions/setup-go@v3
@@ -72,6 +94,33 @@ jobs:
 
       - name: Start Passbolt
         run: docker-compose up -d
+
+      - run: docker ps -a
+
+      - name: Create log folder
+        run: mkdir -p $LOG_DIR/${{ matrix.kind_node_image }}/
+
+      - name: Store container logs
+        if: always()
+        id: deps_logs
+        shell: bash
+        run: |
+          docker logs passbolt >& $LOG_DIR/${{ matrix.kind_node_image }}/passbolt.log
+          docker logs db >& $LOG_DIR/${{ matrix.kind_node_image }}/db.log
+          echo "OUTPUT=0" >> $GITHUB_OUTPUT
+
+      - name: Upload docker logs artifact
+        if: ${{ always() && (steps.deps_logs.outputs.OUTPUT == 0) }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker_container_logs
+          path: |
+            ${{ env.LOG_DIR }}/
+          retention-days: 3
+
+      - name: Wait for Passbolt to be ready with a 1 minute timeout
+        run: |
+          timeout 1m bash -c 'until [[ "$(curl -l -s -o /dev/null -w ''%{http_code}'' http://localhost:8088/auth/login?)" == "200" ]]; do sleep 5; done'
 
       - name: Setup Env
         run: |
