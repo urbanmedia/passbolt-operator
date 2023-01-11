@@ -48,7 +48,6 @@ var _ = Describe("Run Controller", func() {
 			passboltSecretSpec := passboltv1alpha1.PassboltSecretSpec{
 				LeaveOnDelete: false,
 				Secrets: []passboltv1alpha1.SecretSpec{
-					// TODO(@leonsteinhaeuser): add more secrets
 					{
 						KubernetesSecretKey: "password",
 						PassboltSecret: passboltv1alpha1.PassboltSpec{
@@ -128,7 +127,6 @@ var _ = Describe("Run Controller", func() {
 			passboltSecretSpec := passboltv1alpha1.PassboltSecretSpec{
 				LeaveOnDelete: false,
 				Secrets: []passboltv1alpha1.SecretSpec{
-					// TODO(@leonsteinhaeuser): add more secrets
 					{
 						KubernetesSecretKey: "password",
 						PassboltSecret: passboltv1alpha1.PassboltSpec{
@@ -241,6 +239,10 @@ var _ = Describe("Run Controller", func() {
 				KubernetesSecretKey: "app2_username",
 			})
 
+			By("Expect local PassboltSecret to have six secrets")
+			Expect(len(passboltSecret.Spec.Secrets)).Should(Equal(6))
+
+			By("By checking the PassboltSecret has been updated")
 			Expect(k8sClient.Update(ctx, passboltSecretObj)).Should(Succeed())
 			time.Sleep(time.Second * 60)
 

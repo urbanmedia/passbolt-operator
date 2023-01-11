@@ -35,12 +35,20 @@ import (
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	ctrl "sigs.k8s.io/controller-runtime"
+
 	//+kubebuilder:scaffold:imports
+
+	_ "embed"
+)
+
+var (
+	passboltURL string = "http://localhost:8088"
 )
 
 // define global constants
 const (
-	passboltGPGKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+	passboltPassword = "TestTest123!"
+	passboltGPGKey   = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xcTGBGOk118BDACpb7iRZP8WcZsUxUKVLmYWnx1yLtm47R1xhMkWqUL7FL2+
 //v0vyFlCzzALWffH1ki3ss8KlIKqysXjS2dhyz5XkLBoh3mYO9ejubbuVDr
@@ -128,8 +136,6 @@ WYKeqpp78QEl8XCTOBMmOZduLFiUJ+9ZFKeErLurlkoyrymnL+xSaBuTa/V0
 hsyXBbUvHYeSbmxi1mixsT7ry3UDZkqvnr0I0CDsIt33L/LbJ15pxKJJgBgf
 =jwOw
 -----END PGP PRIVATE KEY BLOCK-----`
-	passboltPassword = "TestTest123!"
-	passboltURL      = "http://localhost:8088"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
