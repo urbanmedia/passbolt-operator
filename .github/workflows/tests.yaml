@@ -97,16 +97,20 @@ jobs:
 
       - run: docker ps -a
 
+      - id: form_name
+        run: |
+          echo FORMATTED_LOG_FOLDER_NAME=$(echo "${{ matrix.kind_node_image }}" | sed -e "s+/+-+g" -e "s+:+-+g") >> $GITHUB_ENV
+
       - name: Create log folder
-        run: mkdir -p $LOG_DIR/${{ matrix.kind_node_image }}/
+        run: mkdir -p $LOG_DIR/${{ env.FORMATTED_LOG_FOLDER_NAME }}/
 
       - name: Store container logs
         if: always()
         id: deps_logs
         shell: bash
         run: |
-          docker logs passbolt >& $LOG_DIR/${{ matrix.kind_node_image }}/passbolt.log
-          docker logs db >& $LOG_DIR/${{ matrix.kind_node_image }}/db.log
+          docker logs passbolt >& $LOG_DIR/${{ env.FORMATTED_LOG_FOLDER_NAME }}/passbolt.log
+          docker logs db >& $LOG_DIR/${{ env.FORMATTED_LOG_FOLDER_NAME }}/db.log
           echo "OUTPUT=0" >> $GITHUB_OUTPUT
 
       - name: Upload docker logs artifact
