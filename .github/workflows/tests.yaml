@@ -92,8 +92,8 @@ jobs:
         with:
           node_image: ${{ matrix.kind_node_image }}
 
-      - name: Start Passbolt
-        run: docker-compose up -d
+      - name: Start Mysql database container
+        run: docker-compose up -d db
 
       - name: Install mysql client
         run: |
@@ -108,6 +108,9 @@ jobs:
             --database=passbolt \
             --user=passbolt \
             --password=P4ssb0lt < _data/passbolt_db.sql
+
+      - name: Start the other containers
+        run: docker-compose up -d
 
       - run: docker ps -a
 
