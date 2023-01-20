@@ -99,6 +99,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y mysql-client
+          sleep 5;
+
+      - run: docker ps -a
 
       - name: Restore database
         run: |
