@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "passbolt-operator.fullname" . }}-test-connection"
+  labels:
+    {{- include "passbolt-operator.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "passbolt-operator.fullname" . }}:8443']
+  restartPolicy: Never
