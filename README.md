@@ -102,12 +102,12 @@ docker-compose up -d
 Restore the database
 
 ```bash
-mysqldump \
+mysql \
   --host=127.0.0.1 \
   --port=13306 \
-  --databases passbolt \
+  --database=passbolt \
   --user=passbolt \
-  --password=P4ssb0lt > _data/passbolt_db.sql
+  --password=P4ssb0lt < _data/passbolt_db.sql
 ```
 
 ### Create another API (Version)
