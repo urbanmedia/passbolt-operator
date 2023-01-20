@@ -89,6 +89,26 @@ The Passbolt Operator can be configured with the following environement variable
 - [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) >= v3.7
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/) >= v1.25
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/) >= v0.17
+- mysql-client >= 15.1 (`mysql --version` => `mysql  Ver 15.1 Distrib 10.6.11-MariaDB`)
+
+### Setup the development environment
+
+To setup the development environment, you need to run the following commands:
+
+```bash
+docker-compose up -d
+```
+
+Restore the database
+
+```bash
+mysqldump \
+  --host=127.0.0.1 \
+  --port=13306 \
+  --databases passbolt \
+  --user=passbolt \
+  --password=P4ssb0lt > _data/passbolt_db.sql
+```
 
 ### Create another API (Version)
 
@@ -145,6 +165,21 @@ When the Passbolt instance is up and running, the second step would be to execut
 
 ```bash
 make test
+```
+
+### Continuous Integration (CI)
+
+During the continuous integration, we automatically run the end-to-end and unit tests. To do so, we use the [GitHub Actions](https://github.com/features/actions) platform. The GitHub Actions configuration is defined in the [.github/workflows](.github/workflows) directory.
+
+During the end-to-end and unit tests, we restore the the mysql Passbolt database from the `_data/passbolt_db.sql` file. The '_data/passbolt_db.sql' file was generated with the following command:
+
+```bash
+mysqldump \
+  --host=127.0.0.1 \
+  --port=13306 \
+  --databases passbolt \
+  --user=passbolt \
+  --password=P4ssb0lt > _data/passbolt_db.sql
 ```
 
 ## Contributing
