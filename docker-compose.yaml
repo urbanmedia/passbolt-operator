@@ -11,8 +11,10 @@ services:
       MYSQL_PASSWORD: "P4ssb0lt"
     networks:
       - passbolt
+    ports:
+      - 13306:3306
     volumes:
-      - ./_data/pb_db:/var/lib/mysql
+      - mysqldb:/var/lib/mysql
 
   phpmyadmin:
     image: phpmyadmin
@@ -52,3 +54,6 @@ services:
 networks:
   passbolt:
     driver: bridge
+
+volumes:
+  mysqldb:
