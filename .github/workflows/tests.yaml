@@ -95,6 +95,20 @@ jobs:
       - name: Start Passbolt
         run: docker-compose up -d
 
+      - name: Install mysql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+
+      - name: Restore database
+        run: |
+          mysql \
+            --host=127.0.0.1 \
+            --port=13306 \
+            --database=passbolt \
+            --user=passbolt \
+            --password=P4ssb0lt < _data/passbolt_db.sql
+
       - run: docker ps -a
 
       - name: Wait for Passbolt to be ready with a 1 minute timeout
