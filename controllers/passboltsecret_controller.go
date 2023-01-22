@@ -59,6 +59,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	logr.Info("reconciling PassboltSecret", "name", req.NamespacedName)
 
+	// get passbolt secret resource from Kubernetes
 	secret := &passboltv1alpha1.PassboltSecret{}
 	err := r.Client.Get(ctx, req.NamespacedName, secret)
 	if err != nil {
@@ -90,6 +91,8 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		},
 		StringData: map[string]string{},
 	}
+
+	// add fields to K8s secret
 	for _, scrt := range secret.Spec.Secrets {
 		secretData, err := r.PassboltClient.GetSecret(ctx, scrt.PassboltSecret.Name, scrt.PassboltSecret.Field)
 		if err != nil {
@@ -185,6 +188,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
+	// update status
 	secret.Status.SyncStatus = passboltv1alpha1.SyncStatusSuccess
 	secret.Status.LastSync = metav1.Now()
 	err = r.Client.Status().Update(ctx, secret)
