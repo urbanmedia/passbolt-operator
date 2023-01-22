@@ -47,7 +47,6 @@ services:
     volumes:
       - ./_data/pb_gpg:/etc/passbolt/gpg
       - ./_data/pb_jwt:/etc/passbolt/jwt
-    command: ["/usr/bin/wait-for.sh", "-t", "0", "db:3306", "--", "/docker-entrypoint.sh"]
     ports:
       - 8088:8080
       - 4433:4433
