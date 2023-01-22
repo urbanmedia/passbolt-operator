@@ -115,14 +115,14 @@ jobs:
       - name: Start the other containers
         run: docker-compose up -d
 
-      - run: docker ps -a
+      - run: docker-compose ps -a
 
       - name: Wait for Passbolt to be ready with a 1 minute timeout
         run: |
           timeout 1m bash -c 'until [[ "$(curl -l -s -o /dev/null -w ''%{http_code}'' http://localhost:8088/auth/login?)" == "200" ]]; do sleep 5; done'
 
       - if: always()
-        run: docker ps -a
+        run: docker-compose ps -a
 
       - if: always()
         run: |
