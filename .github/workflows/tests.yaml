@@ -9,7 +9,7 @@ on:
       - LICENSE
       - docker-compose*
       - .dockerignore
-      - .github/
+      #- .github/
       - .gitignore
       - .gitmodules
       - docs/
@@ -67,17 +67,18 @@ jobs:
     needs:
       - vetting
       - linting
-    strategy:
-      fail-fast: true
-      matrix:
-        kind_node_image:
-          - kindest/node:v1.25.3
-          - kindest/node:v1.24.7
-          - kindest/node:v1.23.13
-          - kindest/node:v1.22.15
-          - kindest/node:v1.21.14
+    #strategy:
+    #  fail-fast: true
+    #  matrix:
+    #    kind_node_image:
+    #      - kindest/node:v1.25.3
+    #      - kindest/node:v1.24.7
+    #      - kindest/node:v1.23.13
+    #      - kindest/node:v1.22.15
+    #      - kindest/node:v1.21.14
     env:
       LOG_DIR: logs
+      FORMATTED_LOG_FOLDER_NAME: ""
     steps:
       - name: Install go ${{ env.go_version }}
         uses: actions/setup-go@v3
@@ -87,10 +88,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Create K8s Kind Cluster
-        uses: helm/kind-action@v1.5.0
-        with:
-          node_image: ${{ matrix.kind_node_image }}
+      #- name: Create K8s Kind Cluster
+      #  uses: helm/kind-action@v1.5.0
+      #  with:
+      #    node_image: ${{ matrix.kind_node_image }}
 
       - name: Start Mysql database container
         run: docker-compose up -d db
@@ -124,9 +125,9 @@ jobs:
       - if: always()
         run: docker-compose ps -a
 
-      - if: always()
-        run: |
-          echo FORMATTED_LOG_FOLDER_NAME=$(echo "${{ matrix.kind_node_image }}" | sed -e "s+/+-+g" -e "s+:+-+g") >> $GITHUB_ENV
+      #- if: always()
+      #  run: |
+      #    echo FORMATTED_LOG_FOLDER_NAME=$(echo "${{ matrix.kind_node_image }}" | sed -e "s+/+-+g" -e "s+:+-+g") >> $GITHUB_ENV
 
       - name: Create log folder
         if: always()
