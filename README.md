@@ -186,7 +186,7 @@ mysqldump \
 
 ### Code of Conduct
 
-This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [//TODO].
+This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [leonsteinhaeuser@gmail.com].
 
 ### Contributing Guide
 
@@ -198,7 +198,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Security
 
-If you discover a security vulnerability within this project, please send an e-mail to [//TODO] instead of using the issue tracker. All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
+If you discover a security vulnerability within this project, please send an e-mail to [leonsteinhaeuser@gmail.com] instead of using the issue tracker. All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
 
 ## Support
 
