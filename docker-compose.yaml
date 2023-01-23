@@ -33,6 +33,7 @@ services:
     image: passbolt/passbolt:3.8.3-2-ce-non-root
     restart: unless-stopped
     container_name: passbolt
+    user: "33:33"
     depends_on:
       - db
     environment:
