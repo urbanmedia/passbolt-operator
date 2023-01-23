@@ -93,6 +93,11 @@ jobs:
       #  with:
       #    node_image: ${{ matrix.kind_node_image }}
 
+      - name: Modify _dist/ permissions
+        run: |
+          sudo chmod -R a+rw _data/pb_jwt
+          sudo chmod -R a+rw _data/pb_gpg
+
       - name: Start Mysql database container
         run: docker-compose up -d db
 
