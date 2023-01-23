@@ -54,7 +54,23 @@ If an error occurs during the reconciliation loop, the Passbolt Operator will re
 
 ### Installation
 
-TODO
+For both installation methods, you need to create a Kubernetes Secret with the Passbolt credentials. To do so, you need to run the following command:
+
+```bash
+kubectl create secret generic controller-passbolt-secret \
+  --from-files=gpg_key='/path/to/my/gpg.key' \
+  --from-literal=password='<my-user-password>' \
+  --from-literal=url='<my-passbolt-url>' \
+  --namespace system
+```
+
+#### Kustomize
+
+// TODO
+
+#### Helm
+
+// TODO
 
 ### Configuration
 
@@ -73,6 +89,26 @@ The Passbolt Operator can be configured with the following environement variable
 - [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) >= v3.7
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/) >= v1.25
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/) >= v0.17
+- mysql-client >= 15.1 (`mysql --version` => `mysql  Ver 15.1 Distrib 10.6.11-MariaDB`)
+
+### Setup the development environment
+
+To setup the development environment, you need to run the following commands:
+
+```bash
+docker-compose up -d
+```
+
+Restore the database
+
+```bash
+mysql \
+  --host=127.0.0.1 \
+  --port=13306 \
+  --database=passbolt \
+  --user=passbolt \
+  --password=P4ssb0lt < _data/passbolt_db.sql
+```
 
 ### Create another API (Version)
 
@@ -131,11 +167,26 @@ When the Passbolt instance is up and running, the second step would be to execut
 make test
 ```
 
+### Continuous Integration (CI)
+
+During the continuous integration, we automatically run the end-to-end and unit tests. To do so, we use the [GitHub Actions](https://github.com/features/actions) platform. The GitHub Actions configuration is defined in the [.github/workflows](.github/workflows) directory.
+
+During the end-to-end and unit tests, we restore the the mysql Passbolt database from the `_data/passbolt_db.sql` file. The '_data/passbolt_db.sql' file was generated with the following command:
+
+```bash
+mysqldump \
+  --host=127.0.0.1 \
+  --port=13306 \
+  --databases passbolt \
+  --user=passbolt \
+  --password=P4ssb0lt > _data/passbolt_db.sql
+```
+
 ## Contributing
 
 ### Code of Conduct
 
-This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [//TODO].
+This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [leonsteinhaeuser@gmail.com].
 
 ### Contributing Guide
 
@@ -147,7 +198,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Security
 
-If you discover a security vulnerability within this project, please send an e-mail to [//TODO] instead of using the issue tracker. All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
+If you discover a security vulnerability within this project, please send an e-mail to [leonsteinhaeuser@gmail.com] instead of using the issue tracker. All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
 
 ## Support
 

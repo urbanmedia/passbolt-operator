@@ -89,6 +89,7 @@ type PassboltSecretStatus struct {
 	// +kubebuilder:default=Unknown
 	SyncStatus SyncStatus `json:"syncStatus"`
 	// LastSync is the last time the secret was synced from passbolt.
+	// +kubebuilder:validation:Optional
 	LastSync metav1.Time `json:"lastSync"`
 	// SyncErrors is a list of errors that occurred during the last sync.
 	SyncErrors []SyncError `json:"syncErrors,omitempty"`
