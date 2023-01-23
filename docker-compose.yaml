@@ -2,7 +2,7 @@ version: '3.9'
 services:
   db:
     image: mariadb:10.3
-    restart: unless-stopped
+    restart: always
     container_name: db
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "true"
@@ -14,7 +14,7 @@ services:
     ports:
       - 13306:3306
     volumes:
-      - mysqldb:/var/lib/mysql
+      - mysql:/var/lib/mysql
 
   phpmyadmin:
     image: phpmyadmin
@@ -30,7 +30,7 @@ services:
       - 8089:80
 
   passbolt:
-    image: passbolt/passbolt:latest
+    image: passbolt/passbolt:3.8.3-2-ce-non-root
     restart: unless-stopped
     container_name: passbolt
     depends_on:
@@ -38,7 +38,6 @@ services:
     environment:
       APP_FULL_BASE_URL: http://localhost:8088
       DATASOURCES_DEFAULT_HOST: "db"
-      DATASOURCES_DEFAULT_PORT: "3306"
       DATASOURCES_DEFAULT_USERNAME: "passbolt"
       DATASOURCES_DEFAULT_PASSWORD: "P4ssb0lt"
       DATASOURCES_DEFAULT_DATABASE: "passbolt"
@@ -47,6 +46,7 @@ services:
     volumes:
       - ./_data/pb_gpg:/etc/passbolt/gpg
       - ./_data/pb_jwt:/etc/passbolt/jwt
+    command: ["/usr/bin/wait-for.sh", "-t", "0", "db:3306", "--", "/docker-entrypoint.sh"]
     ports:
       - 8088:8080
       - 4433:4433
@@ -56,4 +56,4 @@ networks:
     driver: bridge
 
 volumes:
-  mysqldb:
+  mysql:
