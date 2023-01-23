@@ -75,6 +75,7 @@ func (c *Client) LoadCache(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get secrets: %w", err)
 	}
+	// fill the cache
 	for _, sctr := range resources {
 		c.secretCache[sctr.Name] = sctr.ID
 	}
@@ -105,6 +106,7 @@ func (c *Client) GetSecret(ctx context.Context, name string, fieldName passboltv
 		return "", fmt.Errorf("failed to get secret with name %q: %w", name, err)
 	}
 
+	// return the requested field
 	switch fieldName {
 	case passboltv1alpha1.FieldNameUsername:
 		return username, nil
