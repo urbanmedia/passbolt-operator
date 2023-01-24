@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  pull_request:
     branches:
       - feature/ci-release-pipeline
 
@@ -35,7 +34,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run GoReleaser
-        if: github.event_name == 'pull_request'
         uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
