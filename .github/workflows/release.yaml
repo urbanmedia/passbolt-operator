@@ -25,6 +25,8 @@ jobs:
 
       - name: Set up Go
         uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.go_version }}
 
       - name: docker login
         uses: docker/login-action@v1
