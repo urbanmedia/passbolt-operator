@@ -1,0 +1,133 @@
+project_name: passbolt-operator
+
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+builds:
+  - id: "controller"
+    main: .
+    binary: passbolt-operator
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+    - goos: windows
+      format: zip
+
+dockers:
+  - id: controller-amd64
+    goos: linux
+    goarch: amd64
+    # Templates of the Docker image names.
+    image_templates:
+    - "ghcr.io/leonsteinhaeuser/passbolt-operator:{{.Tag}}"
+    - "{{ if not .Prerelease }}ghcr.io/leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}"
+    - "{{ if not .Prerelease }}ghcr.io/leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    - "{{ if not .Prerelease }}ghcr.io/leonsteinhaeuser/passbolt-operator:latest{{ end }}"
+    skip_push: false
+    dockerfile: Dockerfile
+    use: docker
+    build_flag_templates:
+    - "--pull"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--platform=linux/amd64"
+    extra_files:
+    - go.mod
+    - go.sum
+    - LICENSE
+    - README.md
+    - PROJECT
+    - Makefile
+    - main.go
+    - api/
+    - config/
+    - controllers/
+    - pkg/
+    - .git/
+    - .dockerignore
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-snap"
+
+release:
+  draft: false
+  discussion_category_name: General
+  prerelease: auto
+  mode: append
+  header: |
+    ## Release {{ .Version }} [{{ .Date }}]
+  footer: |
+    ## Docker Images
+
+    amd64:
+
+    - ghcr.io/leonsteinhaeuser/passbolt-operator:{{.Tag}}
+    - {{ if not .Prerelease }}ghcr.io/leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}
+    - {{ if not .Prerelease }}ghcr.io/leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}
+    - {{ if not .Prerelease }}ghcr.io/leonsteinhaeuser/passbolt-operator:latest{{ end }}
+  extra_files:
+    - glob: LICENSE
+    - glob: README.md
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: "Enhancements"
+      regexp: "^.*enhancement[(\\w)]*:+.*$"
+      order: 2
+    - title: Others
+      order: 999
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^github:"
+      - "^ci:"
+      - "^cd:"
+      - "^ci/cd:"
+      - "^example:"
+      - "^gomod:"
+      - "^git:"
+      - "^goreleaser:"
+      - "^Merge branch"
+      - "WIP"
+
+# The lines beneath this are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
