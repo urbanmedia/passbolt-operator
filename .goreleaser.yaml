@@ -93,7 +93,7 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}"
+    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}-s390x"
     - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}-s390x{{ end }}"
     - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-s390x{{ end }}"
     - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest-s390x{{ end }}"
