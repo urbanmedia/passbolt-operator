@@ -141,12 +141,10 @@ release:
   footer: |
     ## Docker Images
 
-    amd64:
-
     - leonsteinhaeuser/passbolt-operator:{{.Tag}}
-    - {{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}
-    - {{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}
-    - {{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}
+    {{ if not .Prerelease }}- leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}
+    {{ if not .Prerelease }}- leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}
+    {{ if not .Prerelease }}- leonsteinhaeuser/passbolt-operator:latest{{ end }}
   extra_files:
     - glob: LICENSE
     - glob: README.md
