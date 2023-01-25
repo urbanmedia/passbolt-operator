@@ -24,15 +24,6 @@ builds:
       - "7"
     goos:
       - linux
-      - darwin
-      - windows
-    ignore:
-      - goos: windows
-        goarch: arm
-      - goos: windows
-        goarch: s390x
-      - goos: windows
-        goarch: ppc64le
     ldflags:
       - >-
         -X github.com/helm/chart-releaser/cr/cmd.Version={{ .Tag }}
@@ -64,10 +55,10 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}-amd64"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}-amd64"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}-amd64"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}-amd64"
+    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/amd64"
       - --label=org.label-schema.schema-version=1.0
@@ -83,10 +74,10 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}-arm64"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}-arm64"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}-arm64"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}-arm64"
+    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/arm64"
       - --label=org.label-schema.schema-version=1.0
@@ -102,10 +93,10 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}-s390x"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}-s390x"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}-s390x"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}-s390x"
+    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/s390x"
       - --label=org.label-schema.schema-version=1.0
@@ -121,10 +112,10 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}-ppc64le"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}-ppc64le"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}-ppc64le"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}-ppc64le"
+    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/ppc64le"
       - --label=org.label-schema.schema-version=1.0
@@ -133,36 +124,6 @@ dockers:
       - --label=org.label-schema.build-date={{ .Date }}
       - --label=org.label-schema.description='The passbolt-operator is a Kubernetes operator for syncing Passbolt secrets with Kubernetes secrets.'
       - --label=org.label-schema.vendor=Helm
-
-docker_manifests:
-  - name_template: leonsteinhaeuser/passbolt-operator:{{ .Tag }}
-    image_templates:
-      - leonsteinhaeuser/passbolt-operator:{{ .Tag }}-amd64
-      - leonsteinhaeuser/passbolt-operator:{{ .Tag }}-arm64
-      - leonsteinhaeuser/passbolt-operator:{{ .Tag }}-armv7
-      - leonsteinhaeuser/passbolt-operator:{{ .Tag }}-s390x
-      - leonsteinhaeuser/passbolt-operator:{{ .Tag }}-ppc64le
-  - name_template: leonsteinhaeuser/passbolt-operator:v{{ .Major }}
-    image_templates:
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}-amd64
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}-arm64
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}-armv7
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}-s390x
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}-ppc64le
-  - name_template: leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}
-    image_templates:
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-amd64
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-arm64
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-armv7
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-s390x
-      - leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-ppc64le
-  - name_template: leonsteinhaeuser/passbolt-operator:latest
-    image_templates:
-      - leonsteinhaeuser/passbolt-operator:latest-amd64
-      - leonsteinhaeuser/passbolt-operator:latest-arm64
-      - leonsteinhaeuser/passbolt-operator:latest-armv7
-      - leonsteinhaeuser/passbolt-operator:latest-s390x
-      - leonsteinhaeuser/passbolt-operator:latest-ppc64le
 
 checksum:
   name_template: 'checksums.txt'
