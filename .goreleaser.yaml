@@ -239,6 +239,7 @@ changelog:
       - "^git:"
       - "^goreleaser:"
       - "^Merge branch"
+      - "^build(deps)"
       - "WIP"
 
 # The lines beneath this are called `modelines`. See `:help modeline`
