@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - feature/ci-release-pipeline
 
 env:
   go_version: 1.19
