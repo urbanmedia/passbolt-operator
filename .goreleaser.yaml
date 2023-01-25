@@ -24,11 +24,6 @@ builds:
       - "7"
     goos:
       - linux
-    ldflags:
-      - >-
-        -X github.com/helm/chart-releaser/cr/cmd.Version={{ .Tag }}
-        -X github.com/helm/chart-releaser/cr/cmd.GitCommit={{ .Commit }}
-        -X github.com/helm/chart-releaser/cr/cmd.BuildDate={{ .Date }}
 
 archives:
   - format: tar.gz
@@ -40,10 +35,8 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-    # use zip for windows archives
-    format_overrides:
-    - goos: windows
-      format: zip
+    builds:
+      - controller
     files:
       - LICENSE
       - README.md
