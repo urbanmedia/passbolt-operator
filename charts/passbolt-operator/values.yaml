@@ -60,3 +60,9 @@ affinity: {}
 #             operator: In
 #             values:
 #               - linux
+
+monitoring:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+    namespace: ""
