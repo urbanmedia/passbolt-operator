@@ -42,6 +42,40 @@ spec:
           - /manager
           args:
           - --leader-elect
+          env:
+          {{- if .Values.secret.name }}
+            - name: PASSBOLT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "passbolt-operator.secret.name" . }}
+                  key: url
+            - name: PASSBOLT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "passbolt-operator.secret.name" . }}
+                  key: password
+            - name: PASSBOLT_GPG
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "passbolt-operator.secret.name" . }}
+                  key: gpg_key
+          {{- else }}
+            - name: PASSBOLT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "passbolt-operator.secret.name" . }}
+                  key: url
+            - name: PASSBOLT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "passbolt-operator.secret.name" . }}
+                  key: password
+            - name: PASSBOLT_GPG
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "passbolt-operator.secret.name" . }}
+                  key: gpg_key
+          {{- end }}
           ports:
             - name: http
               containerPort: 8081

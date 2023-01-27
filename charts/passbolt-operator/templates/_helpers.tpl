@@ -77,3 +77,11 @@ Create the name of the service account to use
 {{- define "passbolt-operator.rolebinding.leaderelection" -}}
 {{- printf "%s-leader-election" (include "passbolt-operator.fullname" .) | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{- define "passbolt-operator.secret.name" -}}
+{{- if .Values.secret.name }}
+{{- .Values.secret.name }}
+{{- else }}
+{{- printf "%s-" (include "passbolt-operator.fullname" .) | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
