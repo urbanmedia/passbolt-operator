@@ -1,6 +1,8 @@
-1. The operator is no ready to manage PassboltSecrets.
-w
-```yaml
+1. The operator is now ready to manage PassboltSecrets.
+
+Example manifest:
+
+
 apiVersion: passbolt.tagesspiegel.de/v1alpha1
 kind: PassboltSecret
 metadata:
@@ -23,4 +25,3 @@ spec:
       passboltSecret:
         name: AWS_CREDENTIALS_STAGING
         field: uri
-```
