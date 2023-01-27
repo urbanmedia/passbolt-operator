@@ -6,7 +6,6 @@ metadata:
     {{- include "passbolt-operator.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "passbolt-operator.selectorLabels" . | nindent 6 }}
