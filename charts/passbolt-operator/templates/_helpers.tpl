@@ -66,7 +66,7 @@ Create the name of the service account to use
 {{- printf "%s-manager-role" (include "passbolt-operator.fullname" .) | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{- define "passbolt-operator.role.leaderalection" -}}
+{{- define "passbolt-operator.role.leaderelection" -}}
 {{- printf "%s-leader-election" (include "passbolt-operator.fullname" .) | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 

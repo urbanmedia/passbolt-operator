@@ -1,46 +1,39 @@
----
+# permissions to do leader election.
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
-  creationTimestamp: null
-  name: {{ include "passbolt-operator.role.manager" . }}
+  name: {{ include "passbolt-operator.role.leaderelection" . }}
   labels:
     {{- include "passbolt-operator.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - ""
   resources:
-  - secrets
+  - configmaps
   verbs:
-  - create
-  - delete
   - get
   - list
-  - update
   - watch
-- apiGroups:
-  - passbolt.tagesspiegel.de
-  resources:
-  - passboltsecrets
-  verbs:
   - create
+  - update
+  - patch
   - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
   - get
   - list
-  - patch
-  - update
   - watch
-- apiGroups:
-  - passbolt.tagesspiegel.de
-  resources:
-  - passboltsecrets/finalizers
-  verbs:
+  - create
   - update
-- apiGroups:
-  - passbolt.tagesspiegel.de
-  resources:
-  - passboltsecrets/status
-  verbs:
-  - get
   - patch
-  - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
