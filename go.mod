@@ -3,7 +3,7 @@ module github.com/urbanmedia/passbolt-operator
 go 1.19
 
 require (
-	github.com/onsi/ginkgo/v2 v2.7.0
+	github.com/onsi/ginkgo/v2 v2.7.1
 	github.com/onsi/gomega v1.25.0
 	github.com/passbolt/go-passbolt v0.5.8
 	k8s.io/api v0.26.1
