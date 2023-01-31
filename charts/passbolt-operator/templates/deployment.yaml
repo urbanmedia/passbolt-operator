@@ -23,12 +23,9 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "passbolt-operator.serviceAccountName" . }}
       securityContext:
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop:
-            - "ALL"
+        runAsNonRoot: true
+      serviceAccountName: {{ include "passbolt-operator.serviceAccountName" . }}
       terminationGracePeriodSeconds: 10
       containers:
         - name: {{ .Chart.Name }}
