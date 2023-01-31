@@ -1,0 +1,93 @@
+name: Release Charts
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - charts/passbolt-operator/Chart.yaml
+
+jobs:
+  release:
+    # depending on default permission settings for your org (contents being read-only or read-write for workloads), you will have to add permissions
+    # see: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#modifying-the-permissions-for-the-github_token
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.8.1
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.4.1
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+  documentation:
+    runs-on: ubuntu-latest
+    needs:
+      - release
+    # run commands in a container, so we don't need to install anything
+    container:
+      image: jnorwood/helm-docs:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Generate documentation
+        run: |
+          helm-docs --chart-search-root ./charts --document-dependency-values
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: helm-docs
+          retention-days: 1
+          path: |
+            charts/**/README.md
+
+  publish:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs:
+    - release
+    - documentation
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Download documentation
+        uses: actions/download-artifact@v3
+        with:
+          name: helm-docs
+          path: charts
+
+      - name: Commit and Publish documentation
+        run: |
+          git add charts/*/README.md
+          git commit -m "docs(charts): updated auto generated documentation" || true
+          git push
