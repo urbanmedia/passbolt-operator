@@ -2,36 +2,51 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# -- Replicas count
 replicaCount: 1
 
+# -- Image to use for the operator
 image:
+  # -- Image repository
   repository: leonsteinhaeuser/passbolt-operator
+  # -- Image pull policy
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  # -- Tag overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+# -- Image pull secrets
 imagePullSecrets: []
+# -- Name to use for the deployment
 nameOverride: ""
+# -- Full name to use for the deployment
 fullnameOverride: ""
 
+# -- Service account to use for the deployment
 serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Annotations to add to the service account
+  # -- Annotations to add to the service account
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- The name of the service account to use.
+  # If not set, a name is generated using the fullname template
   name: ""
 
+# -- Pod annotations to add to the deployment
 podAnnotations: {}
 
+# -- Secret configuration to authenticate with the Passbolt API
 secret:
+  # -- Name of the secret to use
+  # If not set, we expect the user to pass in the credentials via the values file
   name: "controller-passbolt-secret"
+  # -- The passbolt API authentication configuration
   passbolt:
+    # -- The passbolt API User GPG key
     gpgKey: ""
+    # -- The passbolt API User passphrase
     password: ""
+    # -- The passbolt API URL
     url: ""
 
+# -- Pod resource configuration
 resources:
   limits:
     cpu: 500m
@@ -40,10 +55,13 @@ resources:
     cpu: 10m
     memory: 64Mi
 
+# -- Node selector to use for the deployment
 nodeSelector: {}
 
+# -- Tolerations to use for the deployment
 tolerations: []
 
+# -- Affinity to use for the deployment
 affinity: {}
 #   nodeAffinity:
 #     requiredDuringSchedulingIgnoredDuringExecution:
@@ -61,8 +79,13 @@ affinity: {}
 #             values:
 #               - linux
 
+# -- Monitoring configuration
 monitoring:
+  # -- Enable Prometheus Operator Monitoring
   enabled: false
+  # -- ServiceMonitor configuration
   serviceMonitor:
+    # -- Enable ServiceMonitor
     enabled: false
+    # -- Service Monitor namespace
     namespace: ""
