@@ -55,11 +55,7 @@ app.kubernetes.io/component: control-plane
 Create the name of the service account to use
 */}}
 {{- define "passbolt-operator.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "passbolt-operator.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
+{{- include "passbolt-operator.fullname" . }}
 {{- end }}
 
 {{- define "passbolt-operator.role.manager" -}}
