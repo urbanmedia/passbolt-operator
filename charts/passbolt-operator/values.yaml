@@ -8,7 +8,7 @@ replicaCount: 1
 # -- Image to use for the operator
 image:
   # -- Image repository
-  repository: leonsteinhaeuser/passbolt-operator
+  repository: tagesspiegel/passbolt-operator
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Tag overrides the image tag whose default is the chart appVersion.

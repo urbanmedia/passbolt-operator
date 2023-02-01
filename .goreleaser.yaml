@@ -48,10 +48,10 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest{{ end }}"
+    - "tagesspiegel/passbolt-operator:{{.Tag}}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/amd64"
       - --label=org.label-schema.schema-version=1.0
@@ -67,10 +67,10 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}-arm64"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}-arm64{{ end }}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-arm64{{ end }}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest-arm64{{ end }}"
+    - "tagesspiegel/passbolt-operator:{{.Tag}}-arm64"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-arm64{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-arm64{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-arm64{{ end }}"
     build_flag_templates:
       - "--platform=linux/arm64"
       - --label=org.label-schema.schema-version=1.0
@@ -86,10 +86,10 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}-s390x"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}-s390x{{ end }}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-s390x{{ end }}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest-s390x{{ end }}"
+    - "tagesspiegel/passbolt-operator:{{.Tag}}-s390x"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-s390x{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-s390x{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-s390x{{ end }}"
     build_flag_templates:
       - "--platform=linux/s390x"
       - --label=org.label-schema.schema-version=1.0
@@ -105,10 +105,10 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-    - "leonsteinhaeuser/passbolt-operator:{{.Tag}}-ppc64le"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}-ppc64le{{ end }}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}-ppc64le{{ end }}"
-    - "{{ if not .Prerelease }}leonsteinhaeuser/passbolt-operator:latest-ppc64le{{ end }}"
+    - "tagesspiegel/passbolt-operator:{{.Tag}}-ppc64le"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-ppc64le{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-ppc64le{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-ppc64le{{ end }}"
     build_flag_templates:
       - "--platform=linux/ppc64le"
       - --label=org.label-schema.schema-version=1.0
@@ -134,10 +134,10 @@ release:
   footer: |
     ## Docker Images
 
-    - leonsteinhaeuser/passbolt-operator:{{.Tag}}
-    {{ if not .Prerelease }}- leonsteinhaeuser/passbolt-operator:v{{ .Major }}{{ end }}
-    {{ if not .Prerelease }}- leonsteinhaeuser/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}
-    {{ if not .Prerelease }}- leonsteinhaeuser/passbolt-operator:latest{{ end }}
+    - tagesspiegel/passbolt-operator:{{.Tag}}
+    {{ if not .Prerelease }}- tagesspiegel/passbolt-operator:v{{ .Major }}{{ end }}
+    {{ if not .Prerelease }}- tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}{{ end }}
+    {{ if not .Prerelease }}- tagesspiegel/passbolt-operator:latest{{ end }}
   extra_files:
     - glob: LICENSE
     - glob: README.md
