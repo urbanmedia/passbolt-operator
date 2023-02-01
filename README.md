@@ -1,6 +1,6 @@
 # Kubernetes Passbolt Operator
 
-[![tests](https://github.com/leonsteinhaeuser/passbolt-operator/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/leonsteinhaeuser/passbolt-operator/actions/workflows/tests.yaml)
+[![tests](https://github.com/urbanmedia/passbolt-operator/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/urbanmedia/passbolt-operator/actions/workflows/tests.yaml)
 
 This repository contains the Kubernetes Operator for Passbolt. Passbolt is an open source password manager for teams. It is a self-hosted solution that allows you to manage your passwords securely and share them with your team. The Passbolt Operator is a Kubernetes Operator that allows you to synchronize your Passbolt credentials with Kubernetes Secrets. It is based on [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) framework.
 
@@ -198,7 +198,7 @@ mysqldump \
 
 ### Code of Conduct
 
-This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [leonsteinhaeuser@gmail.com].
+This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [leon.steinhaeuser@tagesspiegel.de].
 
 ### Contributing Guide
 
@@ -210,7 +210,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Security
 
-If you discover a security vulnerability within this project, please send an e-mail to [leonsteinhaeuser@gmail.com] instead of using the issue tracker. All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
+If you discover a security vulnerability within this project, please send an e-mail to [urbanmedia@gmail.com] instead of using the issue tracker. All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
 
 ## Support
 
