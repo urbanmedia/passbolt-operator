@@ -1,6 +1,6 @@
 # Kubernetes Passbolt Operator
 
-[![tests](https://github.com/leonsteinhaeuser/passbolt-operator/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/leonsteinhaeuser/passbolt-operator/actions/workflows/tests.yaml)
+[![tests](https://github.com/urbanmedia/passbolt-operator/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/urbanmedia/passbolt-operator/actions/workflows/tests.yaml)
 
 This repository contains the Kubernetes Operator for Passbolt. Passbolt is an open source password manager for teams. It is a self-hosted solution that allows you to manage your passwords securely and share them with your team. The Passbolt Operator is a Kubernetes Operator that allows you to synchronize your Passbolt credentials with Kubernetes Secrets. It is based on [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) framework.
 
@@ -70,7 +70,19 @@ kubectl create secret generic controller-passbolt-secret \
 
 #### Helm
 
-// TODO
+If you want to install the Passbolt Operator with Helm, you need to first add the Helm repository:
+
+```bash
+helm repo add passbolt-operator https://urbanmedia.github.io/passbolt-operator
+```
+
+Before installing the Passbolt Operator, make sure that you have created the `controller-passbolt-secret` secret in the corresponding namespace. When the secret is created, you can install the Passbolt Operator with the following command:
+
+```bash
+helm install \
+  passbolt-operator passbolt-operator/passbolt-operator \
+  -n passbolt-operator-system
+```
 
 ### Configuration
 
@@ -186,7 +198,7 @@ mysqldump \
 
 ### Code of Conduct
 
-This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [leonsteinhaeuser@gmail.com].
+This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [leon.steinhaeuser@tagesspiegel.de].
 
 ### Contributing Guide
 

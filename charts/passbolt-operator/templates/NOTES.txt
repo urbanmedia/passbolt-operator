@@ -1,0 +1,27 @@
+1. The operator is now ready to manage PassboltSecrets.
+
+Example manifest:
+
+
+apiVersion: passbolt.tagesspiegel.de/v1alpha1
+kind: PassboltSecret
+metadata:
+  labels:
+    my-label: something
+  name: my-secret
+  namespace: default
+spec:
+  leaveOnDelete: false
+  secrets:
+    - kubernetesSecretKey: AWS_ACCESS_KEY_ID
+      passboltSecret:
+        name: AWS_CREDENTIALS_STAGING
+        field: username
+    - kubernetesSecretKey: AWS_SECRET_ACCESS_KEY
+      passboltSecret:
+        name: AWS_CREDENTIALS_STAGING
+        field: password
+    - kubernetesSecretKey: AWS_S3_ENDPOINT
+      passboltSecret:
+        name: AWS_CREDENTIALS_STAGING
+        field: uri

@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    {{- include "passbolt-operator.labels" . | nindent 4 }}
+  name: {{ include "passbolt-operator.rolebinding.leaderelection" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "passbolt-operator.role.leaderelection" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "passbolt-operator.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}

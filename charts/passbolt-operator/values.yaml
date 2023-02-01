@@ -1,0 +1,91 @@
+# Default values for passbolt-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Replicas count
+replicaCount: 1
+
+# -- Image to use for the operator
+image:
+  # -- Image repository
+  repository: tagesspiegel/passbolt-operator
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Tag overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+# -- Image pull secrets
+imagePullSecrets: []
+# -- Name to use for the deployment
+nameOverride: ""
+# -- Full name to use for the deployment
+fullnameOverride: ""
+
+# -- Service account to use for the deployment
+serviceAccount:
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set, a name is generated using the fullname template
+  name: ""
+
+# -- Pod annotations to add to the deployment
+podAnnotations: {}
+
+# -- Secret configuration to authenticate with the Passbolt API
+secret:
+  # -- Name of the secret to use
+  # If not set, we expect the user to pass in the credentials via the values file
+  name: "controller-passbolt-secret"
+  # -- The passbolt API authentication configuration
+  passbolt:
+    # -- The passbolt API User GPG key
+    gpgKey: ""
+    # -- The passbolt API User passphrase
+    password: ""
+    # -- The passbolt API URL
+    url: ""
+
+# -- Pod resource configuration
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+# -- Node selector to use for the deployment
+nodeSelector: {}
+
+# -- Tolerations to use for the deployment
+tolerations: []
+
+# -- Affinity to use for the deployment
+affinity: {}
+#   nodeAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       nodeSelectorTerms:
+#         - matchExpressions:
+#           - key: kubernetes.io/arch
+#             operator: In
+#             values:
+#               - amd64
+#               - arm64
+#               - ppc64le
+#               - s390x
+#           - key: kubernetes.io/os
+#             operator: In
+#             values:
+#               - linux
+
+# -- Monitoring configuration
+monitoring:
+  # -- Enable Prometheus Operator Monitoring
+  enabled: false
+  # -- ServiceMonitor configuration
+  serviceMonitor:
+    # -- Enable ServiceMonitor
+    enabled: false
+    # -- Service Monitor namespace
+    namespace: ""
