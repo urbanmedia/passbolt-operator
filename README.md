@@ -210,7 +210,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Security
 
-If you discover a security vulnerability within this project, please send an e-mail to [urbanmedia@gmail.com] instead of using the issue tracker. All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
+If you discover a security vulnerability within this project, please use issue form [Report a security vulnerability](https://github.com/leonsteinhaeuser/passbolt-operator/security/advisories/new). All security vulnerabilities will be promptly addressed. Please see [Security Policy](SECURITY.md) for more information.
 
 ## Support
 
