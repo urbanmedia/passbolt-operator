@@ -70,7 +70,19 @@ kubectl create secret generic controller-passbolt-secret \
 
 #### Helm
 
-// TODO
+If you want to install the Passbolt Operator with Helm, you need to first add the Helm repository:
+
+```bash
+helm repo add passbolt-operator https://urbanmedia.github.io/passbolt-operator
+```
+
+Before installing the Passbolt Operator, make sure that you have created the `controller-passbolt-secret` secret in the corresponding namespace. When the secret is created, you can install the Passbolt Operator with the following command:
+
+```bash
+helm install \
+  passbolt-operator passbolt-operator/passbolt-operator \
+  -n passbolt-operator-system
+```
 
 ### Configuration
 
