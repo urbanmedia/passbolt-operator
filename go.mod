@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/onsi/ginkgo/v2 v2.8.3
-	github.com/onsi/gomega v1.27.0
+	github.com/onsi/gomega v1.27.1
 	github.com/passbolt/go-passbolt v0.5.8
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
