@@ -107,6 +107,7 @@ type PassboltSecretStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.syncStatus`
 // +kubebuilder:printcolumn:name="Last Sync",type=string,JSONPath=`.status.lastSync`
 
