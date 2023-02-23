@@ -17,7 +17,9 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -115,6 +117,40 @@ type PassboltSecret struct {
 
 	Spec   PassboltSecretSpec   `json:"spec,omitempty"`
 	Status PassboltSecretStatus `json:"status,omitempty"`
+}
+
+// ConvertTo converts this CronJob to the Hub version (v1).
+func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1alpha1.PassboltSecret)
+	src.Spec.LeaveOnDelete = dst.Spec.LeaveOnDelete
+	dst.Spec.Secrets = make([]v1alpha1.SecretSpec, len(src.Spec.Secrets))
+	for i, s := range src.Spec.Secrets {
+		dst.Spec.Secrets[i] = v1alpha1.SecretSpec{
+			PassboltSecret: v1alpha1.PassboltSpec{
+				Name:  s.PassboltSecret.Name,
+				Field: v1alpha1.FieldName(s.PassboltSecret.Field),
+			},
+			KubernetesSecretKey: s.KubernetesSecretKey,
+		}
+	}
+	return nil
+}
+
+// ConvertFrom converts from the Hub version (v1) to this version.
+func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1alpha1.PassboltSecret)
+	dst.Spec.LeaveOnDelete = src.Spec.LeaveOnDelete
+	dst.Spec.Secrets = make([]SecretSpec, len(src.Spec.Secrets))
+	for i, s := range src.Spec.Secrets {
+		dst.Spec.Secrets[i] = SecretSpec{
+			PassboltSecret: PassboltSpec{
+				Name:  s.PassboltSecret.Name,
+				Field: FieldName(s.PassboltSecret.Field),
+			},
+			KubernetesSecretKey: s.KubernetesSecretKey,
+		}
+	}
+	return nil
 }
 
 //+kubebuilder:object:root=true
