@@ -109,6 +109,9 @@ type PassboltSecret struct {
 	Status PassboltSecretStatus `json:"status,omitempty"`
 }
 
+// Hub marks this type as a conversion hub.
+func (*PassboltSecret) Hub() {}
+
 //+kubebuilder:object:root=true
 
 // PassboltSecretList contains a list of PassboltSecret
