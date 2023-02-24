@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
+	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -61,34 +61,34 @@ var _ = Describe("Run Controller", func() {
 		It("Should create successfully", func() {
 			By("Create job for run")
 
-			passboltSecretSpec := passboltv1alpha1.PassboltSecretSpec{
+			passboltSecretSpec := passboltv1alpha2.PassboltSecretSpec{
 				LeaveOnDelete: false,
-				Secrets: []passboltv1alpha1.SecretSpec{
+				Secrets: []passboltv1alpha2.SecretSpec{
 					{
 						KubernetesSecretKey: "password",
-						PassboltSecret: passboltv1alpha1.PassboltSpec{
+						PassboltSecret: passboltv1alpha2.PassboltSpec{
 							Name:  "APP_EXAMPLE",
-							Field: passboltv1alpha1.FieldNamePassword,
+							Field: passboltv1alpha2.FieldNamePassword,
 						},
 					},
 					{
 						KubernetesSecretKey: "url",
-						PassboltSecret: passboltv1alpha1.PassboltSpec{
+						PassboltSecret: passboltv1alpha2.PassboltSpec{
 							Name:  "APP_EXAMPLE",
-							Field: passboltv1alpha1.FieldNameUri,
+							Field: passboltv1alpha2.FieldNameUri,
 						},
 					},
 					{
 						KubernetesSecretKey: "username",
-						PassboltSecret: passboltv1alpha1.PassboltSpec{
+						PassboltSecret: passboltv1alpha2.PassboltSpec{
 							Name:  "APP_EXAMPLE",
-							Field: passboltv1alpha1.FieldNameUsername,
+							Field: passboltv1alpha2.FieldNameUsername,
 						},
 					},
 				},
 			}
 
-			passboltSecret := &passboltv1alpha1.PassboltSecret{
+			passboltSecret := &passboltv1alpha2.PassboltSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name,
 					Namespace: namespace,
@@ -108,13 +108,13 @@ var _ = Describe("Run Controller", func() {
 
 			By("By checking the PassboltSecret can be retrieved")
 			passboltSecretKey := types.NamespacedName{Name: name, Namespace: namespace}
-			passboltSecretObj := &passboltv1alpha1.PassboltSecret{}
+			passboltSecretObj := &passboltv1alpha2.PassboltSecret{}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, passboltSecretKey, passboltSecretObj)
 			}, timeout, interval).Should(Succeed())
 
 			// By("By checking the PassboltSecret has been synced")
-			// Expect(passboltSecretObj.Status.SyncStatus).Should(Equal(passboltv1alpha1.SyncStatusSuccess))
+			// Expect(passboltSecretObj.Status.SyncStatus).Should(Equal(passboltv1alpha2.SyncStatusSuccess))
 
 			By("By checking the PassboltSecret has been synced to Kubernetes Secret")
 			kubernetesSecretKey := passboltSecretKey
@@ -140,34 +140,34 @@ var _ = Describe("Run Controller", func() {
 	Context("Update existing secret", func() {
 		It("Should update successfully", func() {
 			By("Create job for run")
-			passboltSecretSpec := passboltv1alpha1.PassboltSecretSpec{
+			passboltSecretSpec := passboltv1alpha2.PassboltSecretSpec{
 				LeaveOnDelete: false,
-				Secrets: []passboltv1alpha1.SecretSpec{
+				Secrets: []passboltv1alpha2.SecretSpec{
 					{
 						KubernetesSecretKey: "password",
-						PassboltSecret: passboltv1alpha1.PassboltSpec{
+						PassboltSecret: passboltv1alpha2.PassboltSpec{
 							Name:  "APP_EXAMPLE",
-							Field: passboltv1alpha1.FieldNamePassword,
+							Field: passboltv1alpha2.FieldNamePassword,
 						},
 					},
 					{
 						KubernetesSecretKey: "url",
-						PassboltSecret: passboltv1alpha1.PassboltSpec{
+						PassboltSecret: passboltv1alpha2.PassboltSpec{
 							Name:  "APP_EXAMPLE",
-							Field: passboltv1alpha1.FieldNameUri,
+							Field: passboltv1alpha2.FieldNameUri,
 						},
 					},
 					{
 						KubernetesSecretKey: "username",
-						PassboltSecret: passboltv1alpha1.PassboltSpec{
+						PassboltSecret: passboltv1alpha2.PassboltSpec{
 							Name:  "APP_EXAMPLE",
-							Field: passboltv1alpha1.FieldNameUsername,
+							Field: passboltv1alpha2.FieldNameUsername,
 						},
 					},
 				},
 			}
 
-			passboltSecret := &passboltv1alpha1.PassboltSecret{
+			passboltSecret := &passboltv1alpha2.PassboltSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name,
 					Namespace: namespace,
@@ -187,13 +187,13 @@ var _ = Describe("Run Controller", func() {
 
 			By("By checking the PassboltSecret can be retrieved")
 			passboltSecretKey := types.NamespacedName{Name: name, Namespace: namespace}
-			passboltSecretObj := &passboltv1alpha1.PassboltSecret{}
+			passboltSecretObj := &passboltv1alpha2.PassboltSecret{}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, passboltSecretKey, passboltSecretObj)
 			}, timeout, interval).Should(Succeed())
 
 			// By("By checking the PassboltSecret has been synced")
-			// Expect(passboltSecretObj.Status.SyncStatus).Should(Equal(passboltv1alpha1.SyncStatusSuccess))
+			// Expect(passboltSecretObj.Status.SyncStatus).Should(Equal(passboltv1alpha2.SyncStatusSuccess))
 
 			By("By checking the PassboltSecret has been synced to Kubernetes Secret")
 			kubernetesSecretKey := passboltSecretKey
@@ -233,24 +233,24 @@ var _ = Describe("Run Controller", func() {
 			}, timeout, interval).Should(Succeed())
 
 			// update the actual value of the secret
-			passboltSecret.Spec.Secrets = append(passboltSecret.Spec.Secrets, passboltv1alpha1.SecretSpec{
-				PassboltSecret: passboltv1alpha1.PassboltSpec{
+			passboltSecret.Spec.Secrets = append(passboltSecret.Spec.Secrets, passboltv1alpha2.SecretSpec{
+				PassboltSecret: passboltv1alpha2.PassboltSpec{
 					Name:  "APP2_EXAMPLE",
-					Field: passboltv1alpha1.FieldNamePassword,
+					Field: passboltv1alpha2.FieldNamePassword,
 				},
 				KubernetesSecretKey: "app2_password",
 			})
-			passboltSecret.Spec.Secrets = append(passboltSecret.Spec.Secrets, passboltv1alpha1.SecretSpec{
-				PassboltSecret: passboltv1alpha1.PassboltSpec{
+			passboltSecret.Spec.Secrets = append(passboltSecret.Spec.Secrets, passboltv1alpha2.SecretSpec{
+				PassboltSecret: passboltv1alpha2.PassboltSpec{
 					Name:  "APP2_EXAMPLE",
-					Field: passboltv1alpha1.FieldNameUri,
+					Field: passboltv1alpha2.FieldNameUri,
 				},
 				KubernetesSecretKey: "app2_url",
 			})
-			passboltSecret.Spec.Secrets = append(passboltSecret.Spec.Secrets, passboltv1alpha1.SecretSpec{
-				PassboltSecret: passboltv1alpha1.PassboltSpec{
+			passboltSecret.Spec.Secrets = append(passboltSecret.Spec.Secrets, passboltv1alpha2.SecretSpec{
+				PassboltSecret: passboltv1alpha2.PassboltSpec{
 					Name:  "APP2_EXAMPLE",
-					Field: passboltv1alpha1.FieldNameUsername,
+					Field: passboltv1alpha2.FieldNameUsername,
 				},
 				KubernetesSecretKey: "app2_username",
 			})
