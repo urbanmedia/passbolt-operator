@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
+	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 )
 
 const (
@@ -288,17 +288,17 @@ func TestClient_GetSecret(t *testing.T) {
 	type args struct {
 		ctx   context.Context
 		name  string
-		field passboltv1alpha1.FieldName
+		field passboltv1alpha2.FieldName
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    string
+		want    *PassboltSecretDefinition
 		wantErr bool
 	}{
 		{
-			name: "happy path username",
+			name: "happy path secret",
 			fields: fields{
 				client: func() *Client {
 					clnt, err := NewClient(
@@ -316,57 +316,14 @@ func TestClient_GetSecret(t *testing.T) {
 			args: args{
 				ctx:   context.Background(),
 				name:  "APP_EXAMPLE",
-				field: passboltv1alpha1.FieldNameUsername,
+				field: passboltv1alpha2.FieldNameUsername,
 			},
-			want:    "admin",
-			wantErr: false,
-		},
-		{
-			name: "happy path password",
-			fields: fields{
-				client: func() *Client {
-					clnt, err := NewClient(
-						context.Background(),
-						passboltURL,
-						passboltUsername,
-						passboltPassword)
-					if err != nil {
-						t.Errorf("failed to create passbolt client: %v", err)
-						return nil
-					}
-					return clnt
-				}(),
+			want: &PassboltSecretDefinition{
+				Name:     "APP_EXAMPLE",
+				Username: "admin",
+				Password: "admin",
+				URI:      "https://app.example.com",
 			},
-			args: args{
-				ctx:   context.Background(),
-				name:  "APP_EXAMPLE",
-				field: passboltv1alpha1.FieldNamePassword,
-			},
-			want:    "admin",
-			wantErr: false,
-		},
-		{
-			name: "happy path uri",
-			fields: fields{
-				client: func() *Client {
-					clnt, err := NewClient(
-						context.Background(),
-						passboltURL,
-						passboltUsername,
-						passboltPassword)
-					if err != nil {
-						t.Errorf("failed to create passbolt client: %v", err)
-						return nil
-					}
-					return clnt
-				}(),
-			},
-			args: args{
-				ctx:   context.Background(),
-				name:  "APP_EXAMPLE",
-				field: passboltv1alpha1.FieldNameUri,
-			},
-			want:    "https://app.example.com",
 			wantErr: false,
 		},
 		{
@@ -389,7 +346,7 @@ func TestClient_GetSecret(t *testing.T) {
 				ctx:  context.Background(),
 				name: "example",
 			},
-			want:    "",
+			want:    nil,
 			wantErr: true,
 		},
 	}
@@ -408,8 +365,8 @@ func TestClient_GetSecret(t *testing.T) {
 				t.Errorf("Client.GetSecret() error = %v, wantErr %v\nCache data:\n%+v", err, tt.wantErr, tt.fields.client.secretCache)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("Client.GetSecret() = %v, want %v", got, tt.want)
+			if *got != *tt.want {
+				t.Errorf("Client.GetSecret() = %+v, want %+v", *got, *tt.want)
 			}
 		})
 	}
