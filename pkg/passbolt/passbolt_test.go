@@ -119,6 +119,102 @@ hsyXBbUvHYeSbmxi1mixsT7ry3UDZkqvnr0I0CDsIt33L/LbJ15pxKJJgBgf
 	passboltPassword = "TestTest123!"
 )
 
+func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
+	type fields struct {
+		FolderParentID string
+		Name           string
+		Username       string
+		URI            string
+		Password       string
+		Description    string
+	}
+	type args struct {
+		fieldName passboltv1alpha2.FieldName
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "test field password",
+			fields: fields{
+				FolderParentID: "FolderParentID",
+				Name:           "Name",
+				Username:       "Username",
+				Password:       "Password",
+				URI:            "URI",
+				Description:    "Description",
+			},
+			args: args{
+				fieldName: passboltv1alpha2.FieldNamePassword,
+			},
+			want: "Password",
+		},
+		{
+			name: "test field username",
+			fields: fields{
+				FolderParentID: "FolderParentID",
+				Name:           "Name",
+				Username:       "Username",
+				Password:       "Password",
+				URI:            "URI",
+				Description:    "Description",
+			},
+			args: args{
+				fieldName: passboltv1alpha2.FieldNameUsername,
+			},
+			want: "Username",
+		},
+		{
+			name: "test field uri",
+			fields: fields{
+				FolderParentID: "FolderParentID",
+				Name:           "Name",
+				Username:       "Username",
+				Password:       "Password",
+				URI:            "URI",
+				Description:    "Description",
+			},
+			args: args{
+				fieldName: passboltv1alpha2.FieldNameUri,
+			},
+			want: "URI",
+		},
+		{
+			name: "test field abc",
+			fields: fields{
+				FolderParentID: "FolderParentID",
+				Name:           "Name",
+				Username:       "Username",
+				Password:       "Password",
+				URI:            "URI",
+				Description:    "Description",
+			},
+			args: args{
+				fieldName: passboltv1alpha2.FieldName("abc"),
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := PassboltSecretDefinition{
+				FolderParentID: tt.fields.FolderParentID,
+				Name:           tt.fields.Name,
+				Username:       tt.fields.Username,
+				URI:            tt.fields.URI,
+				Password:       tt.fields.Password,
+				Description:    tt.fields.Description,
+			}
+			if got := p.FieldValue(tt.args.fieldName); got != tt.want {
+				t.Errorf("PassboltSecretDefinition.FieldValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNewClient(t *testing.T) {
 	type args struct {
 		ctx      context.Context
