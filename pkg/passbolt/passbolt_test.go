@@ -365,8 +365,10 @@ func TestClient_GetSecret(t *testing.T) {
 				t.Errorf("Client.GetSecret() error = %v, wantErr %v\nCache data:\n%+v", err, tt.wantErr, tt.fields.client.secretCache)
 				return
 			}
-			if *got != *tt.want {
-				t.Errorf("Client.GetSecret() = %+v, want %+v", *got, *tt.want)
+			if got != nil && tt.want != nil {
+				if *got != *tt.want {
+					t.Errorf("Client.GetSecret() = %+v, want %+v", *got, *tt.want)
+				}
 			}
 		})
 	}
