@@ -62,6 +62,10 @@ test: manifests generate fmt vet envtest ## Run tests.
 coverhtml: ## Display test coverage in html
 	go tool cover -html=cover.out
 
+.PHONY: certs
+certs: ## Generate certificates for webhook
+	./hack/generate-cert.sh
+
 ##@ Build
 
 .PHONY: build
@@ -69,7 +73,7 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
+run: manifests generate certs fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 # If you wish built the manager image targeting other platforms you can use the --platform flag.
