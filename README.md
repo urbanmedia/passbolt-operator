@@ -167,6 +167,20 @@ When the Passbolt instance is up and running, the second step would be to execut
 make test
 ```
 
+### In Cluster Testing (Kind)
+
+In order to run the end-to-end tests in a Kubernetes cluster, we need to load the Passbolt Operator image into the Kind cluster. To do so, you need to run the following command:
+
+```bash
+kind load docker-image <image-name> --name <cluster-name> --nodes <node-names-separated-by-a-comma>
+```
+
+When the Passbolt Operator image is loaded into the Kind cluster, the second step would be to deploy the Passbolt Operator in the Kind cluster. To do so, you need to run the following command:
+
+```bash
+IMG="my-img-name:latest" make deploy
+```
+
 ### Continuous Integration (CI)
 
 During the continuous integration, we automatically run the end-to-end and unit tests. To do so, we use the [GitHub Actions](https://github.com/features/actions) platform. The GitHub Actions configuration is defined in the [.github/workflows](.github/workflows) directory.
