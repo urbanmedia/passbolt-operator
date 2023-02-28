@@ -61,7 +61,6 @@ type PassboltSpec struct {
 	// Field is the field in the passbolt secret to be read.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=username;password;uri
-	// +kubebuilder:default=password
 	Field FieldName `json:"field"`
 	// Value is the plain text value of the secret.
 	// This field allows to set a static value or using go templating to generate the value.
