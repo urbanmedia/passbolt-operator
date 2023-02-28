@@ -70,7 +70,7 @@ type PassboltSpec struct {
 	//   - Username
 	//   - URI
 	// +kubebuilder:validation:Optional
-	Value *string `json:"template,omitempty"`
+	Value *string `json:"value,omitempty"`
 }
 
 type SyncStatus string
