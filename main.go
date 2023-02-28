@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
+	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/controllers"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	//+kubebuilder:scaffold:imports
@@ -49,6 +50,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(passboltv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(passboltv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -148,6 +150,16 @@ func main() {
 	if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
 		os.Exit(1)
+	}
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
+			os.Exit(1)
+		}
+		if err = (&passboltv1alpha2.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 
