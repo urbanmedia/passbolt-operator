@@ -30,6 +30,11 @@ var passboltsecretlog = logf.Log.WithName("passboltsecret-resource")
 func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 	passboltsecretlog.V(100).Info("converting PassboltSecret v1alpha1 to v1alpha2")
 	dst := dstRaw.(*v1alpha2.PassboltSecret)
+	dst.Annotations = src.Annotations
+	dst.Labels = src.Labels
+	dst.Name = src.Name
+	dst.Namespace = src.Namespace
+	dst.TypeMeta.Kind = src.TypeMeta.Kind
 	src.Spec.LeaveOnDelete = dst.Spec.LeaveOnDelete
 	dst.Spec.Secrets = make([]v1alpha2.SecretSpec, len(src.Spec.Secrets))
 	for i, s := range src.Spec.Secrets {
@@ -48,6 +53,11 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
 	passboltsecretlog.V(100).Info("converting from PassboltSecret v1alpha2 to v1alpha1")
 	src := srcRaw.(*v1alpha2.PassboltSecret)
+	dst.Annotations = src.Annotations
+	dst.Labels = src.Labels
+	dst.Name = src.Name
+	dst.Namespace = src.Namespace
+	dst.TypeMeta.Kind = src.TypeMeta.Kind
 	dst.Spec.LeaveOnDelete = src.Spec.LeaveOnDelete
 	dst.Spec.Secrets = make([]SecretSpec, len(src.Spec.Secrets))
 	for i, s := range src.Spec.Secrets {
