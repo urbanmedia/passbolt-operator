@@ -58,7 +58,7 @@ For both installation methods, you need to create a Kubernetes Secret with the P
 
 ```bash
 kubectl create secret generic controller-passbolt-secret \
-  --from-files=gpg_key='/path/to/my/gpg.key' \
+  --from-file=gpg_key='/path/to/my/gpg.key' \
   --from-literal=password='<my-user-password>' \
   --from-literal=url='<my-passbolt-url>' \
   --namespace system
