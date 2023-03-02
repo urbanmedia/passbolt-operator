@@ -197,6 +197,8 @@ jobs:
       - vetting
       - linting
       - build-temp-image
+    env:
+      KUBERNETES_NAMESPACE: kubernetes-passbolt-operator-system
     strategy:
       fail-fast: false
       matrix:
@@ -235,13 +237,53 @@ jobs:
         run: |
           kind load docker-image controller:latest --name passbolt-operator-e2e
 
+      - name: Start Mysql database container
+        run: docker-compose up -d db
+
+      - name: Install mysql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+          sleep 5;
+
+      - run: docker ps -a
+
+      - name: Restore database
+        run: |
+          mysql \
+            --host=127.0.0.1 \
+            --port=13306 \
+            --database=passbolt \
+            --user=passbolt \
+            --password=P4ssb0lt < _data/passbolt_db.sql
+
+      - run: |
+          echo "PASSBOLT_HOST=$(hostname -I | awk '{print $1}')" >> $GITHUB_ENV
+
+      - name: Start the other containers
+        run: docker-compose up -d
+
       - name: Deploy CRDs
         run: |
           make install
 
+      - name: Create namespace and secret
+        run: |
+          kubeclt create namespace ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl create secret generic controller-passbolt-secret \
+            --from-file=gpg_key=_data/passbolt_gpg.key \
+            --from-literal=password='TestTest123!' \
+            --from-literal=url=http://${PASSBOLT_HOST}:8088 \
+            --namespace ${{ env.KUBERNETES_NAMESPACE }}
+
       - name: Deploy operator
         run: |
           make deploy
+
+      - name: Wait and check operator is running
+        run: |
+          sleep 20
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }}
 
       - name: Run e2e tests
         run: |
