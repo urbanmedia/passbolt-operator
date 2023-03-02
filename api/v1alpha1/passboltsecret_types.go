@@ -87,6 +87,7 @@ type PassboltSecretStatus struct {
 	// SyncStatus is the status of the last sync.
 	// +kubebuilder:validation:Enum=Success;Error;Unknown
 	// +kubebuilder:default=Unknown
+	// +kubebuilder:validation:Optional
 	SyncStatus SyncStatus `json:"syncStatus"`
 	// LastSync is the last time the secret was synced from passbolt.
 	// +kubebuilder:validation:Optional
