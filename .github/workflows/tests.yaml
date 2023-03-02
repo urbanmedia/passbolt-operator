@@ -269,7 +269,7 @@ jobs:
 
       - name: Create namespace and secret
         run: |
-          kubeclt create namespace ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }}
           kubectl create secret generic controller-passbolt-secret \
             --from-file=gpg_key=_data/passbolt_gpg.key \
             --from-literal=password='TestTest123!' \
