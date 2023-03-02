@@ -62,6 +62,10 @@ test: manifests generate fmt vet envtest ## Run tests.
 coverhtml: ## Display test coverage in html
 	go tool cover -html=cover.out
 
+.PHONY: test-e2e
+test-e2e: ## Run e2e tests.
+	echo "e2e tests are not implemented yet"
+
 ##@ Build
 
 .PHONY: build
@@ -82,6 +86,14 @@ docker-build: test ## Build docker image with the manager.
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+.PHONY: docker-save
+docker-save: ## Save docker image with the manager.
+	docker save ${IMG} -o manager.tar
+
+.PHONY: docker-load
+docker-load: ## Load docker image with the manager.
+	docker load -i manager.tar
 
 # PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
