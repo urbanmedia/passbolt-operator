@@ -73,7 +73,17 @@ kubectl create secret generic controller-passbolt-secret \
 
 #### Kustomize
 
-// TODO
+**ATTENTION**: This installation method is not recommended for production environments. If you want to install the Passbolt Operator in a production environment, please refer to the [Helm](#helm) installation method.
+
+To install the Passbolt Operator with Kustomize, for example in a local Kind cluster, we expect that you have a working Kubernetes cluster with the `controller-passbolt-secret` secret created. To install the Passbolt Operator, you need to run the following commands:
+
+1. Load the controller-manager image into the Kind cluster. See [Kind Load](#in-cluster-testing-kind)
+
+2.
+
+```bash
+make deploy
+```
 
 #### Helm
 
