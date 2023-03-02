@@ -69,15 +69,6 @@ jobs:
     needs:
       - vetting
       - linting
-    #strategy:
-    #  fail-fast: true
-    #  matrix:
-    #    kind_node_image:
-    #      - kindest/node:v1.25.3
-    #      - kindest/node:v1.24.7
-    #      - kindest/node:v1.23.13
-    #      - kindest/node:v1.22.15
-    #      - kindest/node:v1.21.14
     env:
       LOG_DIR: logs
       FORMATTED_LOG_FOLDER_NAME: ""
@@ -89,11 +80,6 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v3
-
-      #- name: Create K8s Kind Cluster
-      #  uses: helm/kind-action@v1.5.0
-      #  with:
-      #    node_image: ${{ matrix.kind_node_image }}
 
       - name: Modify _dist/ permissions
         run: |
