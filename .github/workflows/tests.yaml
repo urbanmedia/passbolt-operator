@@ -285,6 +285,16 @@ jobs:
           sleep 20
           kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }}
 
+      - name: Get operator logs
+        if: always()
+        run: |
+          kubectl logs --tail 10000 -n ${{ env.KUBERNETES_NAMESPACE }} $(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} | grep passbolt-operator-controller-manager | awk '{print $1}') -c manager
+
+      - name: Describe operator pod
+        if: always()
+        run: |
+          kubectl describe pod -n ${{ env.KUBERNETES_NAMESPACE }} $(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} | grep passbolt-operator-controller-manager | awk '{print $1}')
+
       - name: Run e2e tests
         run: |
           make test-e2e
