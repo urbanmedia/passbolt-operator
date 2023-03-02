@@ -239,6 +239,10 @@ jobs:
           name: ${{ env.artifact_bin_name }}
           path: bin/
 
+      - run: |
+          sudo chown -R $USER:$USER bin/
+          sudo chmod -R a+rwx bin/
+
       - name: Load image
         run: |
           make docker-load
