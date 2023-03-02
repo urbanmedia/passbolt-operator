@@ -237,6 +237,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: ${{ env.artifact_bin_name }}
+          path: bin/
 
       - name: Load image
         run: |
