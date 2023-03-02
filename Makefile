@@ -64,7 +64,9 @@ coverhtml: ## Display test coverage in html
 
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests.
-	echo "e2e tests are not implemented yet"
+	kubectl apply -f config/samples/
+	sleep 5
+	./e2e/run.sh
 
 ##@ Build
 
