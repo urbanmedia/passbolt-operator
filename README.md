@@ -118,6 +118,14 @@ Kubebuilder allows you to bootstrap a new API Version. To do so, you need to run
 kubebuilder create api --group passbolt --version v1alpha1 --kind PassboltSecret
 ```
 
+### Create validation and defaulting webhooks
+
+Kubebuilder allows you to bootstrap a new webhook. To do so, you need to run the following command:
+
+```bash
+kubebuilder create webhook --group passbolt --version v1alpha1 --kind PassboltSecret --defaulting --programmatic-validation
+```
+
 ### Start the Operator
 
 Since the Operator requires a running instance of Passbolt, we will use the [Passbolt Docker image](https://hub.docker.com/r/passbolt/passbolt) to start a Passbolt instance. To start the Passbolt instance, you need to run the following command:
