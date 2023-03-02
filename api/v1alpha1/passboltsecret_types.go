@@ -93,6 +93,7 @@ type PassboltSecretStatus struct {
 	// +kubebuilder:validation:Optional
 	LastSync metav1.Time `json:"lastSync"`
 	// SyncErrors is a list of errors that occurred during the last sync.
+	// +kubebuilder:validation:Optional
 	SyncErrors []SyncError `json:"syncErrors,omitempty"`
 }
 
