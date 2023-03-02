@@ -11,24 +11,31 @@ This repository contains the Kubernetes Operator for Passbolt. Passbolt is an op
 The Passbolt Operator allows you to synchronize your Passbolt credentials with Kubernetes Secrets. To do so, you need to create a `PassboltSecret` resource. The `PassboltSecret` resource is a Kubernetes Custom Resource Definition (CRD) that allows you to define the Passbolt credentials that you want to synchronize with Kubernetes Secrets. The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets.
 
 ```yaml
-apiVersion: passbolt.tagesspiegel.de/v1alpha1
+apiVersion: passbolt.tagesspiegel.de/v1alpha2
 kind: PassboltSecret
 metadata:
   name: passbolt-secret-sample
   namespace: default
 spec:
+  leaveOnDelete: false
   secrets:
-    - kubernetesSecretKey: "" # The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential.
+    - kubernetesSecretKey: ""
       passboltSecret:
-        name: "" # The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
-        field: username # The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
+        name: ""
+        field: username
+    - kubernetesSecretKey: ""
+      passboltSecret:
+        name: ""
+        value: user={{.Username}} password={{.Password}} host={{.URI}}
 ```
 
 The `PassboltSecret` resource contains the following fields:
 
+- `leaveOnDelete`: A boolean that indicates if the Passbolt Operator should leave the Kubernetes Secret on deletion of the `PassboltSecret` resource. Defaults to `false`.
 - `secrets`: A list of Passbolt credentials that you want to synchronize with Kubernetes Secrets. Each Passbolt credential is defined by the following fields:
   - `passboltSecret.name`: The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
   - `passboltSecret.field`: The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
+  - `passboltSecret.value`: A Go template value of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Supported variables are: `Username`, `Password`, `URI`. The `passboltSecret.value` field is mutually exclusive with the `passboltSecret.field` field.
   - `kubernetesSecretKey`: The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential.
 
 The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets. The Passbolt Operator will create a Kubernetes Secret with the name `passbolt-secret-name` in the namespace `default`. The resulting Kubernetes Secret is defined as follows:
