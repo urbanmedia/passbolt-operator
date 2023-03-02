@@ -206,6 +206,7 @@ jobs:
       - vetting
       - linting
       - build-temp-image
+      - prepare-bin
     env:
       KUBERNETES_NAMESPACE: kubernetes-passbolt-operator-system
     strategy:
