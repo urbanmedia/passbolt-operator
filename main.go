@@ -147,10 +147,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "PassboltSecret")
 		os.Exit(1)
 	}
-	if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
-		os.Exit(1)
-	}
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
