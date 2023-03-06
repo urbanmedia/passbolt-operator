@@ -10,7 +10,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 function getPassboltSecret() {
-    local apiVersion="$1"
+    local apiVersion="${1}"
     kubectl get \
         passboltsecrets.${apiVersion}.passbolt.tagesspiegel.de \
         passboltsecret-sample-${apiVersion} \
@@ -18,7 +18,7 @@ function getPassboltSecret() {
 }
 
 function isSyncStatusSuccess() {
-    local jsonRsp=${1}
+    local jsonRsp="${1}"
     local syncStatus=$(echo ${jsonRsp} | jq -r '.status.syncStatus')
     if [ "$syncStatus" != "Success" ]; then
         echo "${RED}Sync status is not Success: $syncStatus${NC}"
@@ -27,7 +27,7 @@ function isSyncStatusSuccess() {
 }
 
 function isSecretExist() {
-    local jsonRsp=${1}
+    local jsonRsp="${1}"
     local secretName=$(echo ${jsonRsp} | jq -r '.metadata.name')
     echo -e "${BLUE}Checking if secret ${YELLOW}${secretName}${BLUE} exists${NC}"
     kubectl get secret ${secretName}
