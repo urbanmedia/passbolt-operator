@@ -10,7 +10,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 function getPassboltSecret() {
-    local apiVersion=$1
+    local apiVersion="$1"
     kubectl get \
         passboltsecrets.${apiVersion}.passbolt.tagesspiegel.de \
         passboltsecret-sample-${apiVersion} \
