@@ -12,16 +12,16 @@ NC='\033[0m' # No Color
 function getPassboltSecret() {
     local apiVersion="${1}"
     kubectl get \
-        passboltsecrets.${apiVersion}.passbolt.tagesspiegel.de \
-        passboltsecret-sample-${apiVersion} \
+        "passboltsecrets.${apiVersion}.passbolt.tagesspiegel.de" \
+        "passboltsecret-sample-${apiVersion}" \
         -o json
 }
 
 function isSyncStatusSuccess() {
     local jsonRsp="${1}"
     local syncStatus=$(echo ${jsonRsp} | jq -r '.status.syncStatus')
-    if [ "$syncStatus" != "Success" ]; then
-        echo "${RED}Sync status is not Success: $syncStatus${NC}"
+    if [ "${syncStatus}" != "Success" ]; then
+        echo "${RED}Sync status is not Success: ${syncStatus}${NC}"
         exit 1
     fi
 }
@@ -42,9 +42,9 @@ function isSecretExist() {
 # Example: apiVersions="v1alpha1 v1alpha2 v1beta1 ..."
 apiVersions="v1alpha1"
 
-for apiVersion in $apiVersions; do
+for apiVersion in ${apiVersions}; do
     echo -e "${BLUE}Testing API version: ${YELLOW}${apiVersion}${NC}"
-    jsonRsp=$(getPassboltSecret $apiVersion)
+    jsonRsp=$(getPassboltSecret ${apiVersion})
     isSyncStatusSuccess "${jsonRsp}"
     isSecretExist "${jsonRsp}"
     echo -e "${GREEN}Tests passed for version ${YELLOW}${apiVersion}${NC}"
