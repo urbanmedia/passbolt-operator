@@ -231,6 +231,11 @@ jobs:
         with:
           go-version: ${{ env.go_version }}
 
+      - uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -288,6 +293,17 @@ jobs:
 
       - name: Start the other containers
         run: docker-compose up -d
+
+      - name: Install cert-manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install \
+            cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --set installCRDs=true \
+            --set prometheus.enabled=false
 
       - name: Deploy CRDs
         run: |
