@@ -340,3 +340,8 @@ jobs:
       - name: Run e2e tests
         run: |
           make test-e2e
+
+      - name: Get operator logs
+        if: always()
+        run: |
+          kubectl logs --tail 10000 -n ${{ env.KUBERNETES_NAMESPACE }} $(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} | grep passbolt-operator-controller-manager | awk '{print $1}') -c manager
