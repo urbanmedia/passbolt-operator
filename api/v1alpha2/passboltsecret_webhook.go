@@ -25,6 +25,7 @@ import (
 var passboltsecretlog = logf.Log.WithName("passboltsecret-resource")
 
 func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	passboltsecretlog.V(10).Info("setting up webhook", "version", "v1alpha2")
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
