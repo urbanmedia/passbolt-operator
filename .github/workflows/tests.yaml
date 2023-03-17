@@ -25,6 +25,7 @@ env:
   go_version: 1.19
   artifact_name: passbolt-operator
   artifact_bin_name: kubebuilder
+  IMG: tagesspiegel/passbolt-operator:dev
 
 jobs:
   vetting:
@@ -255,7 +256,7 @@ jobs:
 
       - name: Load image into kind cluster
         run: |
-          kind load docker-image controller:latest --name passbolt-operator-e2e
+          kind load docker-image ${{ env.IMG }} --name passbolt-operator-e2e
 
       - name: Start Mysql database container
         run: docker-compose up -d db
