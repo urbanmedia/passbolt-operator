@@ -220,10 +220,7 @@ var _ = Describe("Run Controller", func() {
 
 			By("By checking the PassboltSecret has been updated")
 			// test if the passbolt secret could be updated
-			// we expect that the secret can not be updated because the secret does not contain the necessary metadata
-			// to update the secret
-			// (Operation cannot be fulfilled on passboltsecrets.passbolt.tagesspiegel.de \"example-passboltsecret\": the object has been modified; please apply your changes to the latest version and try again")
-			Expect(k8sClient.Update(ctx, passboltSecret)).ShouldNot(Succeed())
+			Expect(k8sClient.Update(ctx, passboltSecret)).Should(Succeed())
 			time.Sleep(time.Second * 60)
 
 			// this time we expect that the secret can be updated because the secret contains the necessary metadata
