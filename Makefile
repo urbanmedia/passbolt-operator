@@ -3,6 +3,7 @@
 IMG ?= tagesspiegel/passbolt-operator:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
+E2E_APPLY_WAIT_DURATION ?= 10
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -65,7 +66,7 @@ coverhtml: ## Display test coverage in html
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests.
 	kubectl apply -f config/samples/
-	sleep 5
+	sleep ${E2E_APPLY_WAIT_DURATION}
 	./e2e/run.sh
 
 ##@ Build
