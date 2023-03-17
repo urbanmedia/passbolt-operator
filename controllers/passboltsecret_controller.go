@@ -22,10 +22,10 @@ import (
 	"fmt"
 	"text/template"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
@@ -158,48 +158,14 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	// check if the secret already exists
-	err = r.Client.Get(ctx, req.NamespacedName, &corev1.Secret{})
-	if err != nil && !errors.IsNotFound(err) {
-		secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
-		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
-			Message: fmt.Sprintf("unable to GET secret %q.%q from Kubernetes: %s", req.Name, req.Namespace, err.Error()),
-			Time:    metav1.Now(),
-		})
-		err2 := updateStatus(ctx, secret)
-		if err2 != nil {
-			// if the status update fails, we do not want to return the error
-			logr.Error(err2, "unable to update PassboltSecret status")
-			return ctrl.Result{}, nil
-		}
-		// if the secret cannot be retrieved, we do not want to return the error
-		return ctrl.Result{}, nil
-	}
-	// check if the secret already exists
-	if errors.IsNotFound(err) {
-		err = r.Client.Create(ctx, k8sSecret)
-		if err != nil {
-			secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
-			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
-				Message: fmt.Sprintf("unable to CREATE secret %q.%q from Kubernetes: %s", k8sSecret.GetName(), k8sSecret.GetNamespace(), err.Error()),
-				Time:    metav1.Now(),
-			})
-			err2 := updateStatus(ctx, secret)
-			if err2 != nil {
-				// if the status update fails, we do not want to return the error
-				logr.Error(err2, "unable to update PassboltSecret status")
-				return ctrl.Result{}, nil
-			}
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	}
-	// secret already exists, update it
-	err = r.Client.Update(ctx, k8sSecret)
+	opRslt, err := controllerutil.CreateOrUpdate(ctx, r.Client, k8sSecret, func() error {
+		// we don't need to update the secret, as the secret is defined already above
+		return nil
+	})
 	if err != nil {
 		secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
 		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
-			Message: fmt.Sprintf("unable to UPDATE secret %q.%q from Kubernetes: %s", k8sSecret.GetName(), k8sSecret.GetNamespace(), err.Error()),
+			Message: fmt.Sprintf("unable to create or patch secret %q.%q: %s", req.Name, req.Namespace, err.Error()),
 			Time:    metav1.Now(),
 		})
 		err2 := updateStatus(ctx, secret)
@@ -208,7 +174,13 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			logr.Error(err2, "unable to update PassboltSecret status")
 			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
+	}
+
+	if opRslt == controllerutil.OperationResultNone {
+		// secret was not changed
+		logr.V(10).Info("secret unchanged")
+		return ctrl.Result{}, nil
 	}
 
 	// update status
