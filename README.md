@@ -71,6 +71,12 @@ kubectl create secret generic controller-passbolt-secret \
   --namespace system
 ```
 
+#### Prerequisites
+
+In order to install the Passbolt Operator, you need to have the following prerequisites installed on your K8s cluster:
+
+- [cert-manager](https://cert-manager.io/docs/installation/kubernetes/) >= v1.7
+
 #### Kustomize
 
 **ATTENTION**: This installation method is not recommended for production environments. If you want to install the Passbolt Operator in a production environment, please refer to the [Helm](#helm) installation method.
