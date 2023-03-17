@@ -21,7 +21,7 @@ function isSyncStatusSuccess() {
     local jsonRsp="${1}"
     local syncStatus=$(echo ${jsonRsp} | jq -r '.status.syncStatus')
     if [ "${syncStatus}" != "Success" ]; then
-        echo "${RED}Sync status is not Success: ${syncStatus}${NC}"
+        echo -e "${RED}Sync status is not Success: ${syncStatus}${NC}"
         exit 1
     fi
 }
