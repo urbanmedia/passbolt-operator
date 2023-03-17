@@ -37,7 +37,7 @@ services:
     depends_on:
       - db
     environment:
-      APP_FULL_BASE_URL: http://localhost:8088
+      APP_FULL_BASE_URL: http://${PASSBOLT_HOST:-localhost}:8088
       DATASOURCES_DEFAULT_HOST: "db"
       DATASOURCES_DEFAULT_USERNAME: "passbolt"
       DATASOURCES_DEFAULT_PASSWORD: "P4ssb0lt"
