@@ -20,3 +20,4 @@ bin/
 .envrc
 
 dist/
+generated/

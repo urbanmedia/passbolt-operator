@@ -62,9 +62,11 @@ test: manifests generate fmt vet envtest ## Run tests.
 coverhtml: ## Display test coverage in html
 	go tool cover -html=cover.out
 
-.PHONY: certs
-certs: ## Generate certificates for webhook
-	./hack/generate-cert.sh
+.PHONY: test-e2e
+test-e2e: ## Run e2e tests.
+	kubectl apply -f config/samples/
+	sleep 5
+	./e2e/run.sh
 
 ##@ Build
 
@@ -82,6 +84,35 @@ run: manifests generate certs fmt vet ## Run a controller from your host.
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} -f Dockerfile.dev .
+
+.PHONY: docker-push
+docker-push: ## Push docker image with the manager.
+	docker push ${IMG}
+
+.PHONY: docker-save
+docker-save: ## Save docker image with the manager.
+	docker save ${IMG} -o manager.tar
+
+.PHONY: docker-load
+docker-load: ## Load docker image with the manager.
+	docker load -i manager.tar
+
+# PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple
+# architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
+# - able to use docker buildx . More info: https://docs.docker.com/build/buildx/
+# - have enable BuildKit, More info: https://docs.docker.com/develop/develop-images/build_enhancements/
+# - be able to push the image for your registry (i.e. if you do not inform a valid value via IMG=<myregistry/image:<tag>> than the export will fail)
+# To properly provided solutions that supports more than one platform you should use this option.
+PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+.PHONY: docker-buildx
+docker-buildx: test ## Build and push docker image for the manager for cross-platform support
+	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
+	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile.dev > Dockerfile.cross
+	- docker buildx create --name project-v3-builder
+	docker buildx use project-v3-builder
+	- docker buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross
+	- docker buildx rm project-v3-builder
+	rm Dockerfile.cross
 
 ##@ Deployment
 
@@ -110,6 +141,13 @@ raw: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: generate-manifests
+generate-manifests: manifests kustomize ## Generate manifests and store them in the generated folder
+	mkdir -p generated/crds/ generated/default/
+	$(KUSTOMIZE) build config/crd --output generated/crds/
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default --output generated/default/
 
 ##@ Build Dependencies
 
