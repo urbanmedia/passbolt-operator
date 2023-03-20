@@ -36,7 +36,7 @@ jobs:
           submodules: true
           ref: ${{ github.ref }}
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.go_version }}
 
@@ -53,7 +53,7 @@ jobs:
           submodules: true
           ref: ${{ github.ref }}
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.go_version }}
 
@@ -75,7 +75,7 @@ jobs:
       FORMATTED_LOG_FOLDER_NAME: ""
     steps:
       - name: Install go ${{ env.go_version }}
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ env.go_version }}
 
@@ -221,7 +221,7 @@ jobs:
           - kindest/node:v1.21.14
     steps:
       - name: Install go ${{ env.go_version }}
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ env.go_version }}
 
