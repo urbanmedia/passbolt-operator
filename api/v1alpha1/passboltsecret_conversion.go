@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -37,6 +38,7 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 			KubernetesSecretKey: s.KubernetesSecretKey,
 		}
 	}
+	dst.Spec.SecretType = corev1.SecretTypeOpaque
 	dst.Status.LastSync = src.Status.LastSync
 	dst.Status.SyncStatus = v1alpha2.SyncStatus(src.Status.SyncStatus)
 	dst.Status.SyncErrors = make([]v1alpha2.SyncError, len(src.Status.SyncErrors))
