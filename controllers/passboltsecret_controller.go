@@ -30,6 +30,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/Masterminds/sprig/v3"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -121,7 +122,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		// if the value field is set, we expect a template to be defined
 		if scrt.PassboltSecret.Value != nil {
-			tmpl, err := template.New("value").Parse(*scrt.PassboltSecret.Value)
+			tmpl, err := template.New("value").Funcs(sprig.FuncMap()).Parse(*scrt.PassboltSecret.Value)
 			if err != nil {
 				logr.Error(err, "unable to parse template")
 				return ctrl.Result{}, nil
