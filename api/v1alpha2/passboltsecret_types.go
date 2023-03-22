@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,9 +30,19 @@ type PassboltSecretSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=true
 	LeaveOnDelete bool `json:"leaveOnDelete,omitempty"`
+	// SecretType is the type of the secret. Defaults to Opaque.
+	// If set to kubernetes.io/dockerconfigjson, the secret will be created as a docker config secret.
+	// We also expect the PassboltSecretName to be set in this case.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=Opaque
+	// +kubebuilder:validation:Enum=Opaque;kubernetes.io/dockerconfigjson
+	SecretType corev1.SecretType `json:"secretType,omitempty"`
+	// PassboltSecretName is the name of the passbolt secret name to be used as a docker config secret.
+	// +kubebuilder:validation:Optional
+	PassboltSecretName *string `json:"passboltSecretName,omitempty"`
 	// Secrets is a list of secrets to be fetched from passbolt.
-	// +kubebuilder:validation:Required
-	Secrets []SecretSpec `json:"secrets"`
+	// +kubebuilder:validation:Optional
+	Secrets []SecretSpec `json:"secrets,omitempty"`
 }
 
 // SecretSpec defines the secret mapping between passbolt and kubernetes.
@@ -59,7 +70,7 @@ type PassboltSpec struct {
 	// Field is the field in the passbolt secret to be read.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=username;password;uri
-	Field FieldName `json:"field"`
+	Field FieldName `json:"field,omitempty"`
 	// Value is the plain text value of the secret.
 	// This field allows to set a static value or using go templating to generate the value.
 	// Valid template variables are:
