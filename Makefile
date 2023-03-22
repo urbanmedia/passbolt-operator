@@ -4,6 +4,7 @@ IMG ?= tagesspiegel/passbolt-operator:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
 E2E_APPLY_WAIT_DURATION ?= 10
+KIND_CLUSTER_NAME ?= passbolt-operator
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -68,6 +69,10 @@ test-e2e: ## Run e2e tests.
 	kubectl apply -f config/samples/
 	sleep ${E2E_APPLY_WAIT_DURATION}
 	./e2e/run.sh
+
+.PHONE: kind-load
+kind-load: ## Load docker image into kind cluster
+	kind load docker-image ${IMG} --name ${KIND_CLUSTER_NAME}
 
 ##@ Build
 
