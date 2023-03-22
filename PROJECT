@@ -20,4 +20,13 @@ resources:
   webhooks:
     conversion: true
     webhookVersion: v1
+- domain: tagesspiegel.de
+  group: passbolt
+  kind: PassboltSecret
+  path: github.com/urbanmedia/passbolt-operator/api/v1alpha2
+  version: v1alpha2
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"
