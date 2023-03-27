@@ -31,12 +31,11 @@ import (
 var passboltsecretlog = logf.Log.WithName("passboltsecret-resource")
 
 func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	passboltsecretlog.V(10).Info("setting up webhook", "version", "v1alpha2")
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
 }
-
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 //+kubebuilder:webhook:path=/mutate-passbolt-tagesspiegel-de-v1alpha2-passboltsecret,mutating=true,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1alpha2,name=mpassboltsecret.kb.io,admissionReviewVersions=v1
 
