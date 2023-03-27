@@ -32,10 +32,12 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
-	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
+	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
+
+	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	//+kubebuilder:scaffold:imports
 
 	_ "embed"
@@ -192,6 +194,9 @@ var _ = BeforeSuite(func() {
 
 	// add passbolt operator scheme
 	err = passboltv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = passboltv1alpha2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme

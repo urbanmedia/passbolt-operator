@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 # color codes
 RED='\033[0;31m'
@@ -21,7 +21,7 @@ function isSyncStatusSuccess() {
     local jsonRsp="${1}"
     local syncStatus=$(echo ${jsonRsp} | jq -r '.status.syncStatus')
     if [ "${syncStatus}" != "Success" ]; then
-        echo "${RED}Sync status is not Success: ${syncStatus}${NC}"
+        echo -e "${RED}Sync status is not Success: ${syncStatus}${NC}"
         exit 1
     fi
 }
@@ -40,7 +40,7 @@ function isSecretExist() {
 # apiVersions represents a list of API versions to test
 # The list is ordered by priority, the first version is tested first
 # Example: apiVersions="v1alpha1 v1alpha2 v1beta1 ..."
-apiVersions="v1alpha1"
+apiVersions="v1alpha1 v1alpha2"
 
 for apiVersion in ${apiVersions}; do
     echo -e "${BLUE}Testing API version: ${YELLOW}${apiVersion}${NC}"

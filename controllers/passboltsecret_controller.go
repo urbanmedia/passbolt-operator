@@ -17,18 +17,20 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"text/template"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 
-	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
+	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -60,7 +62,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	logr.Info("reconciling PassboltSecret", "name", req.NamespacedName)
 
 	// get passbolt secret resource from Kubernetes
-	secret := &passboltv1alpha1.PassboltSecret{}
+	secret := &passboltv1alpha2.PassboltSecret{}
 	err := r.Client.Get(ctx, req.NamespacedName, secret)
 	if err != nil {
 		if err = client.IgnoreNotFound(err); err != nil {
@@ -69,10 +71,10 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 	// cleanup status
-	secret.Status.SyncErrors = []passboltv1alpha1.SyncError{}
+	secret.Status.SyncErrors = []passboltv1alpha2.SyncError{}
 
 	// create status update function
-	updateStatus := func(ctx context.Context, passboltSecret *passboltv1alpha1.PassboltSecret) error {
+	updateStatus := func(ctx context.Context, passboltSecret *passboltv1alpha2.PassboltSecret) error {
 		err := r.Client.Status().Update(ctx, passboltSecret)
 		if err != nil {
 			logr.Error(err, "unable to update PassboltSecret status")
@@ -96,8 +98,8 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	for _, scrt := range secret.Spec.Secrets {
 		secretData, err := r.PassboltClient.GetSecret(ctx, scrt.PassboltSecret.Name, scrt.PassboltSecret.Field)
 		if err != nil {
-			secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
-			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
+			secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
+			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
 				Message:    fmt.Sprintf("unable to GET secret %q.%q from passbolt: %s", scrt.PassboltSecret.Name, scrt.PassboltSecret.Field, err.Error()),
 				Time:       metav1.Now(),
 				SecretName: scrt.PassboltSecret.Name,
@@ -112,7 +114,28 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			// if the secret cannot be retrieved, we do not want to return the error
 			return ctrl.Result{}, nil
 		}
-		k8sSecret.StringData[scrt.KubernetesSecretKey] = secretData
+		// if the field field is set, we expect a field to be defined
+		if scrt.PassboltSecret.Field != "" {
+			k8sSecret.StringData[scrt.KubernetesSecretKey] = secretData.FieldValue(scrt.PassboltSecret.Field)
+			continue
+		}
+		// if the value field is set, we expect a template to be defined
+		if scrt.PassboltSecret.Value != nil {
+			tmpl, err := template.New("value").Parse(*scrt.PassboltSecret.Value)
+			if err != nil {
+				logr.Error(err, "unable to parse template")
+				return ctrl.Result{}, nil
+			}
+
+			target := bytes.NewBuffer([]byte{})
+			err = tmpl.Execute(target, *secretData)
+			if err != nil {
+				panic(err)
+			}
+			k8sSecret.StringData[scrt.KubernetesSecretKey] = target.String()
+			continue
+		}
+		logr.Info("no field or value defined for secret", "name", scrt.PassboltSecret.Name)
 	}
 
 	// set owner reference if LeaveOnDelete was set to false
@@ -120,8 +143,8 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// set owner reference
 		err = ctrl.SetControllerReference(secret, k8sSecret, r.Scheme)
 		if err != nil {
-			secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
-			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
+			secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
+			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
 				Message: fmt.Sprintf("failed to set controller reference to secret %s.%s: %s", req.Name, req.Namespace, err.Error()),
 				Time:    metav1.Now(),
 			})
@@ -135,48 +158,14 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	// check if the secret already exists
-	err = r.Client.Get(ctx, req.NamespacedName, &corev1.Secret{})
-	if err != nil && !errors.IsNotFound(err) {
-		secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
-		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
-			Message: fmt.Sprintf("unable to GET secret %q.%q from Kubernetes: %s", req.Name, req.Namespace, err.Error()),
-			Time:    metav1.Now(),
-		})
-		err2 := updateStatus(ctx, secret)
-		if err2 != nil {
-			// if the status update fails, we do not want to return the error
-			logr.Error(err2, "unable to update PassboltSecret status")
-			return ctrl.Result{}, nil
-		}
-		// if the secret cannot be retrieved, we do not want to return the error
-		return ctrl.Result{}, nil
-	}
-	// check if the secret already exists
-	if errors.IsNotFound(err) {
-		err = r.Client.Create(ctx, k8sSecret)
-		if err != nil {
-			secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
-			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
-				Message: fmt.Sprintf("unable to CREATE secret %q.%q from Kubernetes: %s", k8sSecret.GetName(), k8sSecret.GetNamespace(), err.Error()),
-				Time:    metav1.Now(),
-			})
-			err2 := updateStatus(ctx, secret)
-			if err2 != nil {
-				// if the status update fails, we do not want to return the error
-				logr.Error(err2, "unable to update PassboltSecret status")
-				return ctrl.Result{}, nil
-			}
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	}
-	// secret already exists, update it
-	err = r.Client.Update(ctx, k8sSecret)
+	opRslt, err := controllerutil.CreateOrUpdate(ctx, r.Client, k8sSecret, func() error {
+		// we don't need to update the secret, as the secret is defined already above
+		return nil
+	})
 	if err != nil {
-		secret.Status.SyncStatus = passboltv1alpha1.SyncStatusError
-		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha1.SyncError{
-			Message: fmt.Sprintf("unable to UPDATE secret %q.%q from Kubernetes: %s", k8sSecret.GetName(), k8sSecret.GetNamespace(), err.Error()),
+		secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
+		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
+			Message: fmt.Sprintf("unable to create or patch secret %q.%q: %s", req.Name, req.Namespace, err.Error()),
 			Time:    metav1.Now(),
 		})
 		err2 := updateStatus(ctx, secret)
@@ -185,11 +174,17 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			logr.Error(err2, "unable to update PassboltSecret status")
 			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
+	}
+
+	if opRslt == controllerutil.OperationResultNone {
+		// secret was not changed
+		logr.V(10).Info("secret unchanged")
+		return ctrl.Result{}, nil
 	}
 
 	// update status
-	secret.Status.SyncStatus = passboltv1alpha1.SyncStatusSuccess
+	secret.Status.SyncStatus = passboltv1alpha2.SyncStatusSuccess
 	secret.Status.LastSync = metav1.Now()
 	err = r.Client.Status().Update(ctx, secret)
 	if err != nil {
@@ -206,7 +201,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 // SetupWithManager sets up the controller with the Manager.
 func (r *PassboltSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&passboltv1alpha1.PassboltSecret{}).
+		For(&passboltv1alpha2.PassboltSecret{}).
 		Owns(&corev1.Secret{}).
 		Complete(r)
 }

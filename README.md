@@ -11,24 +11,31 @@ This repository contains the Kubernetes Operator for Passbolt. Passbolt is an op
 The Passbolt Operator allows you to synchronize your Passbolt credentials with Kubernetes Secrets. To do so, you need to create a `PassboltSecret` resource. The `PassboltSecret` resource is a Kubernetes Custom Resource Definition (CRD) that allows you to define the Passbolt credentials that you want to synchronize with Kubernetes Secrets. The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets.
 
 ```yaml
-apiVersion: passbolt.tagesspiegel.de/v1alpha1
+apiVersion: passbolt.tagesspiegel.de/v1alpha2
 kind: PassboltSecret
 metadata:
   name: passbolt-secret-sample
   namespace: default
 spec:
+  leaveOnDelete: false
   secrets:
-    - kubernetesSecretKey: "" # The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential.
+    - kubernetesSecretKey: ""
       passboltSecret:
-        name: "" # The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
-        field: username # The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
+        name: ""
+        field: username
+    - kubernetesSecretKey: ""
+      passboltSecret:
+        name: ""
+        value: user={{.Username}} password={{.Password}} host={{.URI}}
 ```
 
 The `PassboltSecret` resource contains the following fields:
 
+- `leaveOnDelete`: A boolean that indicates if the Passbolt Operator should leave the Kubernetes Secret on deletion of the `PassboltSecret` resource. Defaults to `false`.
 - `secrets`: A list of Passbolt credentials that you want to synchronize with Kubernetes Secrets. Each Passbolt credential is defined by the following fields:
   - `passboltSecret.name`: The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
   - `passboltSecret.field`: The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
+  - `passboltSecret.value`: A Go template value of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Supported variables are: `Username`, `Password`, `URI`. The `passboltSecret.value` field is mutually exclusive with the `passboltSecret.field` field.
   - `kubernetesSecretKey`: The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential.
 
 The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets. The Passbolt Operator will create a Kubernetes Secret with the name `passbolt-secret-name` in the namespace `default`. The resulting Kubernetes Secret is defined as follows:
@@ -58,15 +65,31 @@ For both installation methods, you need to create a Kubernetes Secret with the P
 
 ```bash
 kubectl create secret generic controller-passbolt-secret \
-  --from-files=gpg_key='/path/to/my/gpg.key' \
+  --from-file=gpg_key='/path/to/my/gpg.key' \
   --from-literal=password='<my-user-password>' \
   --from-literal=url='<my-passbolt-url>' \
   --namespace system
 ```
 
+#### Prerequisites
+
+In order to install the Passbolt Operator, you need to have the following prerequisites installed on your K8s cluster:
+
+- [cert-manager](https://cert-manager.io/docs/installation/kubernetes/) >= v1.7
+
 #### Kustomize
 
-// TODO
+**ATTENTION**: This installation method is not recommended for production environments. If you want to install the Passbolt Operator in a production environment, please refer to the [Helm](#helm) installation method.
+
+To install the Passbolt Operator with Kustomize, for example in a local Kind cluster, we expect that you have a working Kubernetes cluster with the `controller-passbolt-secret` secret created. To install the Passbolt Operator, you need to run the following commands:
+
+1. Load the controller-manager image into the Kind cluster. See [Kind Load](#in-cluster-testing-kind)
+
+2.
+
+```bash
+make deploy
+```
 
 #### Helm
 
@@ -118,6 +141,14 @@ Kubebuilder allows you to bootstrap a new API Version. To do so, you need to run
 kubebuilder create api --group passbolt --version v1alpha1 --kind PassboltSecret
 ```
 
+### Create validation and defaulting webhooks
+
+Kubebuilder allows you to bootstrap a new webhook. To do so, you need to run the following command:
+
+```bash
+kubebuilder create webhook --group passbolt --version v1alpha1 --kind PassboltSecret --defaulting --programmatic-validation
+```
+
 ### Start the Operator
 
 Since the Operator requires a running instance of Passbolt, we will use the [Passbolt Docker image](https://hub.docker.com/r/passbolt/passbolt) to start a Passbolt instance. To start the Passbolt instance, you need to run the following command:
@@ -165,6 +196,20 @@ When the Passbolt instance is up and running, the second step would be to execut
 
 ```bash
 make test
+```
+
+### In Cluster Testing (Kind)
+
+In order to run the end-to-end tests in a Kubernetes cluster, we need to load the Passbolt Operator image into the Kind cluster. To do so, you need to run the following command:
+
+```bash
+kind load docker-image <image-name> --name <cluster-name> --nodes <node-names-separated-by-a-comma>
+```
+
+When the Passbolt Operator image is loaded into the Kind cluster, the second step would be to deploy the Passbolt Operator in the Kind cluster. To do so, you need to run the following command:
+
+```bash
+IMG="my-img-name:latest" make deploy
 ```
 
 ### Continuous Integration (CI)

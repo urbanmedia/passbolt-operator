@@ -24,8 +24,31 @@ import (
 
 	"github.com/passbolt/go-passbolt/api"
 	"github.com/passbolt/go-passbolt/helper"
-	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
+	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 )
+
+type PassboltSecretDefinition struct {
+	FolderParentID string
+	Name           string
+	Username       string
+	URI            string
+	Password       string
+	Description    string
+}
+
+// FieldValue returns the value of the given field by name.
+func (p PassboltSecretDefinition) FieldValue(fieldName passboltv1alpha2.FieldName) string {
+	switch fieldName {
+	case passboltv1alpha2.FieldNameUsername:
+		return p.Username
+	case passboltv1alpha2.FieldNameUri:
+		return p.URI
+	case passboltv1alpha2.FieldNamePassword:
+		return p.Password
+	default:
+		return ""
+	}
+}
 
 // Client is a passbolt client.
 // It is used to retrieve secrets from passbolt.
@@ -92,29 +115,26 @@ func (c *Client) Close(ctx context.Context) error {
 
 // GetSecret retrieves the secret value for the given secret ID.
 // The secret value is returned as a string.
-func (c *Client) GetSecret(ctx context.Context, name string, fieldName passboltv1alpha1.FieldName) (string, error) {
+func (c *Client) GetSecret(ctx context.Context, name string, fieldName passboltv1alpha2.FieldName) (*PassboltSecretDefinition, error) {
 	// prevent concurrent access to the cache
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	// check if the secret is in the cache
 	if _, ok := c.secretCache[name]; !ok {
-		return "", fmt.Errorf("unable to find secret in cache with name %q", name)
+		return nil, fmt.Errorf("unable to find secret in cache with name %q", name)
 	}
 	// retrieve the secret
-	_, _, username, uri, pw, _, err := helper.GetResource(ctx, c.passboltClient, c.secretCache[name])
+	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, c.secretCache[name])
 	if err != nil {
-		return "", fmt.Errorf("failed to get secret with name %q: %w", name, err)
+		return nil, fmt.Errorf("failed to get secret with name %q: %w", name, err)
 	}
-
-	// return the requested field
-	switch fieldName {
-	case passboltv1alpha1.FieldNameUsername:
-		return username, nil
-	case passboltv1alpha1.FieldNameUri:
-		return uri, nil
-	case passboltv1alpha1.FieldNamePassword:
-		return pw, nil
-	default:
-		return "", fmt.Errorf("unknown field name %q", fieldName)
+	secret := &PassboltSecretDefinition{
+		Username:       username,
+		URI:            uri,
+		Password:       pw,
+		Description:    description,
+		FolderParentID: folderParentID,
+		Name:           name,
 	}
+	return secret, nil
 }

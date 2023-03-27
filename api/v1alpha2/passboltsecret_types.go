@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,10 +57,17 @@ type PassboltSpec struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 	// Field is the field in the passbolt secret to be read.
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=username;password;uri
-	// +kubebuilder:default=password
 	Field FieldName `json:"field"`
+	// Value is the plain text value of the secret.
+	// This field allows to set a static value or using go templating to generate the value.
+	// Valid template variables are:
+	//   - Password
+	//   - Username
+	//   - URI
+	// +kubebuilder:validation:Optional
+	Value *string `json:"value,omitempty"`
 }
 
 type SyncStatus string
@@ -87,18 +94,17 @@ type PassboltSecretStatus struct {
 	// SyncStatus is the status of the last sync.
 	// +kubebuilder:validation:Enum=Success;Error;Unknown
 	// +kubebuilder:default=Unknown
-	// +kubebuilder:validation:Optional
 	SyncStatus SyncStatus `json:"syncStatus"`
 	// LastSync is the last time the secret was synced from passbolt.
 	// +kubebuilder:validation:Optional
 	LastSync metav1.Time `json:"lastSync"`
 	// SyncErrors is a list of errors that occurred during the last sync.
-	// +kubebuilder:validation:Optional
 	SyncErrors []SyncError `json:"syncErrors,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.syncStatus`
 // +kubebuilder:printcolumn:name="Last Sync",type=string,JSONPath=`.status.lastSync`
 
@@ -110,6 +116,9 @@ type PassboltSecret struct {
 	Spec   PassboltSecretSpec   `json:"spec,omitempty"`
 	Status PassboltSecretStatus `json:"status,omitempty"`
 }
+
+// Hub marks this type as a conversion hub.
+func (*PassboltSecret) Hub() {}
 
 //+kubebuilder:object:root=true
 
