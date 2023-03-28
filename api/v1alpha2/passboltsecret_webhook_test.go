@@ -19,6 +19,7 @@ package v1alpha2
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -68,8 +69,121 @@ func TestPassboltSecret_Default(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
+		want   PassboltSecret
 	}{
-		// TODO: Add test cases.
+		{
+			name: "secret type not set",
+			fields: fields{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec:   PassboltSecretSpec{},
+				Status: PassboltSecretStatus{},
+			},
+			want: PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeOpaque,
+				},
+			},
+		},
+		{
+			name: "secret type is opaque",
+			fields: fields{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeOpaque,
+				},
+				Status: PassboltSecretStatus{},
+			},
+			want: PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeOpaque,
+				},
+			},
+		},
+		{
+			name: "secret type is SecretTypeDockerConfigJson",
+			fields: fields{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeDockerConfigJson,
+				},
+				Status: PassboltSecretStatus{},
+			},
+			want: PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeDockerConfigJson,
+				},
+			},
+		},
+		{
+			name: "secret type is SecretTypeTLS",
+			fields: fields{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeTLS,
+				},
+				Status: PassboltSecretStatus{},
+			},
+			want: PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeOpaque,
+				},
+			},
+		},
+		{
+			name: "secret type is SecretTypeBasicAuth",
+			fields: fields{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeBasicAuth,
+				},
+				Status: PassboltSecretStatus{},
+			},
+			want: PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					SecretType: corev1.SecretTypeOpaque,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -80,6 +194,9 @@ func TestPassboltSecret_Default(t *testing.T) {
 				Status:     tt.fields.Status,
 			}
 			r.Default()
+			if diff := cmp.Diff(*r, tt.want); diff != "" {
+				t.Errorf("PassboltSecret.Default() diff = %s", diff)
+			}
 		})
 	}
 }

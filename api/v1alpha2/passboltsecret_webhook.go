@@ -45,7 +45,7 @@ var _ webhook.Defaulter = &PassboltSecret{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *PassboltSecret) Default() {
 	passboltsecretlog.Info("default", "name", r.Name)
-	if r.Spec.SecretType == "" {
+	if r.Spec.SecretType == "" || (r.Spec.SecretType != corev1.SecretTypeOpaque && r.Spec.SecretType != corev1.SecretTypeDockerConfigJson) {
 		r.Spec.SecretType = corev1.SecretTypeOpaque
 	}
 }
