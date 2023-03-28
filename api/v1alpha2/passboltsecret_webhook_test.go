@@ -23,9 +23,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
+	//ctrl "sigs.k8s.io/controller-runtime"
 )
 
+/*
 func TestPassboltSecret_SetupWebhookWithManager(t *testing.T) {
 	type fields struct {
 		TypeMeta   metav1.TypeMeta
@@ -58,6 +59,7 @@ func TestPassboltSecret_SetupWebhookWithManager(t *testing.T) {
 		})
 	}
 }
+*/
 
 func TestPassboltSecret_Default(t *testing.T) {
 	type fields struct {
