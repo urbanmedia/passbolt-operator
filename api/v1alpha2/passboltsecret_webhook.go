@@ -102,18 +102,18 @@ func (r *PassboltSecret) validatePassboltSecret() error {
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *PassboltSecret) ValidateCreate() error {
-	passboltsecretlog.Info("validate create", "name", r.Name)
+	passboltsecretlog.V(50).Info("validate create", "name", r.Name)
 	return r.validatePassboltSecret()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *PassboltSecret) ValidateUpdate(old runtime.Object) error {
-	passboltsecretlog.Info("validate update", "name", r.Name)
+	passboltsecretlog.V(50).Info("validate update", "name", r.Name)
 	return r.validatePassboltSecret()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *PassboltSecret) ValidateDelete() error {
-	passboltsecretlog.Info("validate delete", "name", r.Name)
+	passboltsecretlog.V(50).Info("validate delete", "name", r.Name)
 	return r.validatePassboltSecret()
 }
