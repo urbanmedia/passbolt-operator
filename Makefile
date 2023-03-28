@@ -4,6 +4,7 @@ IMG ?= tagesspiegel/passbolt-operator:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
 E2E_APPLY_WAIT_DURATION ?= 10
+KIND_CLUSTER_NAME ?= passbolt-operator
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -69,6 +70,10 @@ test-e2e: ## Run e2e tests.
 	sleep ${E2E_APPLY_WAIT_DURATION}
 	./e2e/run.sh
 
+.PHONE: kind-load
+kind-load: ## Load docker image into kind cluster
+	kind load docker-image ${IMG} --name ${KIND_CLUSTER_NAME}
+
 ##@ Build
 
 .PHONY: build
@@ -84,7 +89,7 @@ run: manifests generate certs fmt vet ## Run a controller from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	docker build -t ${IMG} . -f Dockerfile.dev
+	docker build -t ${IMG} -f Dockerfile.dev .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

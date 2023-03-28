@@ -17,8 +17,14 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"errors"
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // log is for logging in this package.
@@ -31,4 +37,83 @@ func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+//+kubebuilder:webhook:path=/mutate-passbolt-tagesspiegel-de-v1alpha2-passboltsecret,mutating=true,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1alpha2,name=mpassboltsecret.kb.io,admissionReviewVersions=v1
+
+// check if we have implemented the defaulter interface
+var _ webhook.Defaulter = &PassboltSecret{}
+
+// Default implements webhook.Defaulter so a webhook will be registered for the type
+func (r *PassboltSecret) Default() {
+	passboltsecretlog.Info("default", "name", r.Name)
+	if r.Spec.SecretType == "" || (r.Spec.SecretType != corev1.SecretTypeOpaque && r.Spec.SecretType != corev1.SecretTypeDockerConfigJson) {
+		r.Spec.SecretType = corev1.SecretTypeOpaque
+	}
+}
+
+//+kubebuilder:webhook:path=/validate-passbolt-tagesspiegel-de-v1alpha2-passboltsecret,mutating=false,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1alpha2,name=vpassboltsecret.kb.io,admissionReviewVersions=v1
+
+var (
+	ErrInvalidSecretType              = errors.New("invalid secret type")
+	ErrPassboltSecretNameIsRequired   = errors.New("passboltSecretName is required for secret type")
+	ErrSecretsAreNotAllowed           = errors.New("secrets are not allowed")
+	ErrFieldAndValueAreNotAllowed     = errors.New("field and value are not allowed")
+	ErrFieldOrValueIsRequired         = errors.New("field or value is required")
+	ErrSecretsAreRequired             = errors.New("secrets are required")
+	ErrPassboltSecretNameIsNotAllowed = errors.New("passboltSecretName is not allowed")
+)
+
+// check if we have implemented the validator interface
+var _ webhook.Validator = &PassboltSecret{}
+
+func (r *PassboltSecret) validatePassboltSecret() error {
+	switch r.Spec.SecretType {
+	case corev1.SecretTypeOpaque:
+		if r.Spec.PassboltSecretName != nil {
+			return fmt.Errorf("%w for secret type %s", ErrPassboltSecretNameIsNotAllowed, r.Spec.SecretType)
+		}
+		if len(r.Spec.Secrets) == 0 {
+			return fmt.Errorf("%w for secret type %s", ErrSecretsAreRequired, r.Spec.SecretType)
+		}
+		// check if only FieldName or Value is set
+		for _, secret := range r.Spec.Secrets {
+			if secret.PassboltSecret.Field == "" && secret.PassboltSecret.Value == nil {
+				return fmt.Errorf("%w for secret %s and field %v", ErrFieldOrValueIsRequired, r.GetName(), secret)
+			}
+			if secret.PassboltSecret.Field != "" && secret.PassboltSecret.Value != nil {
+				return fmt.Errorf("%w for secret %s and field %v", ErrFieldAndValueAreNotAllowed, r.GetName(), secret)
+			}
+		}
+		return nil
+	case corev1.SecretTypeDockerConfigJson:
+		if r.Spec.PassboltSecretName == nil {
+			return fmt.Errorf("%w: %s", ErrPassboltSecretNameIsRequired, r.Spec.SecretType)
+		}
+		if *r.Spec.PassboltSecretName == "" {
+			return fmt.Errorf("%w: %s", ErrPassboltSecretNameIsRequired, r.Spec.SecretType)
+		}
+		if len(r.Spec.Secrets) > 0 {
+			return fmt.Errorf("%w for secret type %s", ErrSecretsAreNotAllowed, r.Spec.SecretType)
+		}
+		return nil
+	default:
+		return fmt.Errorf("%w: %s", ErrInvalidSecretType, r.Spec.SecretType)
+	}
+}
+
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+func (r *PassboltSecret) ValidateCreate() error {
+	passboltsecretlog.V(50).Info("validate create", "name", r.Name)
+	return r.validatePassboltSecret()
+}
+
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+func (r *PassboltSecret) ValidateUpdate(old runtime.Object) error {
+	passboltsecretlog.V(50).Info("validate update", "name", r.Name)
+	return r.validatePassboltSecret()
+}
+
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+func (r *PassboltSecret) ValidateDelete() error {
+	passboltsecretlog.V(50).Info("validate delete", "name", r.Name)
+	return r.validatePassboltSecret()
+}

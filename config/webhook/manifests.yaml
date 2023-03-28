@@ -1,0 +1,54 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-passbolt-tagesspiegel-de-v1alpha2-passboltsecret
+  failurePolicy: Fail
+  name: mpassboltsecret.kb.io
+  rules:
+  - apiGroups:
+    - passbolt.tagesspiegel.de
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - passboltsecrets
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-passbolt-tagesspiegel-de-v1alpha2-passboltsecret
+  failurePolicy: Fail
+  name: vpassboltsecret.kb.io
+  rules:
+  - apiGroups:
+    - passbolt.tagesspiegel.de
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - passboltsecrets
+  sideEffects: None

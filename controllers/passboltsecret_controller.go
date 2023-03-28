@@ -19,6 +19,8 @@ package controllers
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"text/template"
 
@@ -30,6 +32,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/Masterminds/sprig/v3"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,6 +86,21 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return nil
 	}
 
+	// make sure that the secret type is supported
+	if secret.Spec.SecretType != corev1.SecretTypeOpaque && secret.Spec.SecretType != corev1.SecretTypeDockerConfigJson {
+		logr.Info("unsupported secret type", "type", secret.Spec.SecretType)
+		secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
+		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
+			Message: fmt.Sprintf("unsupported secret type %q", secret.Spec.SecretType),
+			Time:    metav1.Now(),
+		})
+		if err := updateStatus(ctx, secret); err != nil {
+			logr.Error(err, "unable to update status")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
 	// retrieve secrets from passbolt and store them in Kubernetes secrets
 	k8sSecret := &corev1.Secret{
 		ObjectMeta: ctrl.ObjectMeta{
@@ -94,52 +112,99 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		StringData: map[string]string{},
 	}
 
-	// add fields to K8s secret
-	for _, scrt := range secret.Spec.Secrets {
-		secretData, err := r.PassboltClient.GetSecret(ctx, scrt.PassboltSecret.Name, scrt.PassboltSecret.Field)
+	if secret.Spec.SecretType == corev1.SecretTypeDockerConfigJson {
+		logr.Info("updating docker config json secret")
+		// get secret from passbolt
+		secretData, err := r.PassboltClient.GetSecret(ctx, *secret.Spec.PassboltSecretName, "")
 		if err != nil {
 			secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
 			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
-				Message:    fmt.Sprintf("unable to GET secret %q.%q from passbolt: %s", scrt.PassboltSecret.Name, scrt.PassboltSecret.Field, err.Error()),
+				Message:    fmt.Sprintf("unable to GET secret %q from passbolt: %s", *secret.Spec.PassboltSecretName, err.Error()),
 				Time:       metav1.Now(),
-				SecretName: scrt.PassboltSecret.Name,
-				SecretKey:  scrt.KubernetesSecretKey,
+				SecretName: *secret.Spec.PassboltSecretName,
 			})
-			err2 := updateStatus(ctx, secret)
-			if err2 != nil {
-				// if the status update fails, we do not want to return the error
-				logr.Error(err2, "unable to update PassboltSecret status")
-				return ctrl.Result{}, nil
+			if err := updateStatus(ctx, secret); err != nil {
+				logr.Error(err, "unable to update status")
+				return ctrl.Result{}, err
 			}
-			// if the secret cannot be retrieved, we do not want to return the error
 			return ctrl.Result{}, nil
 		}
-		// if the field field is set, we expect a field to be defined
-		if scrt.PassboltSecret.Field != "" {
-			k8sSecret.StringData[scrt.KubernetesSecretKey] = secretData.FieldValue(scrt.PassboltSecret.Field)
-			continue
+
+		// create docker config json
+		myConfig := map[string]any{
+			"auths": map[string]any{
+				secretData.URI: map[string]string{
+					"auth": base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", secretData.Username, secretData.Password))),
+				},
+			},
 		}
-		// if the value field is set, we expect a template to be defined
-		if scrt.PassboltSecret.Value != nil {
-			tmpl, err := template.New("value").Parse(*scrt.PassboltSecret.Value)
+		// parse map to json
+		bts, err := json.Marshal(myConfig)
+		if err != nil {
+			secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
+			secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
+				Message: fmt.Sprintf("unable to marshal docker config json: %s", err),
+				Time:    metav1.Now(),
+			})
+			if err := updateStatus(ctx, secret); err != nil {
+				logr.Error(err, "unable to update status")
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{}, nil
+		}
+		// add docker config json to k8s secret
+		k8sSecret.StringData[corev1.DockerConfigJsonKey] = string(bts)
+		k8sSecret.Type = corev1.SecretTypeDockerConfigJson
+	} else {
+		logr.Info("updating opaque secret")
+		// add fields to K8s secret
+		for _, scrt := range secret.Spec.Secrets {
+			secretData, err := r.PassboltClient.GetSecret(ctx, scrt.PassboltSecret.Name, scrt.PassboltSecret.Field)
 			if err != nil {
-				logr.Error(err, "unable to parse template")
+				secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
+				secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha2.SyncError{
+					Message:    fmt.Sprintf("unable to GET secret %q.%q from passbolt: %s", scrt.PassboltSecret.Name, scrt.PassboltSecret.Field, err.Error()),
+					Time:       metav1.Now(),
+					SecretName: scrt.PassboltSecret.Name,
+					SecretKey:  scrt.KubernetesSecretKey,
+				})
+				err2 := updateStatus(ctx, secret)
+				if err2 != nil {
+					// if the status update fails, we do not want to return the error
+					logr.Error(err2, "unable to update PassboltSecret status")
+					return ctrl.Result{}, nil
+				}
+				// if the secret cannot be retrieved, we do not want to return the error
 				return ctrl.Result{}, nil
 			}
-
-			target := bytes.NewBuffer([]byte{})
-			err = tmpl.Execute(target, *secretData)
-			if err != nil {
-				panic(err)
+			// if the field field is set, we expect a field to be defined
+			if scrt.PassboltSecret.Field != "" {
+				k8sSecret.StringData[scrt.KubernetesSecretKey] = secretData.FieldValue(scrt.PassboltSecret.Field)
+				continue
 			}
-			k8sSecret.StringData[scrt.KubernetesSecretKey] = target.String()
-			continue
+			// if the value field is set, we expect a template to be defined
+			if scrt.PassboltSecret.Value != nil {
+				tmpl, err := template.New("value").Funcs(sprig.FuncMap()).Parse(*scrt.PassboltSecret.Value)
+				if err != nil {
+					logr.Error(err, "unable to parse template")
+					return ctrl.Result{}, nil
+				}
+
+				target := bytes.NewBuffer([]byte{})
+				err = tmpl.Execute(target, *secretData)
+				if err != nil {
+					panic(err)
+				}
+				k8sSecret.StringData[scrt.KubernetesSecretKey] = target.String()
+				continue
+			}
+			logr.Info("no field or value defined for secret", "name", scrt.PassboltSecret.Name)
 		}
-		logr.Info("no field or value defined for secret", "name", scrt.PassboltSecret.Name)
 	}
 
 	// set owner reference if LeaveOnDelete was set to false
 	if !secret.Spec.LeaveOnDelete {
+		logr.Info("leave on delete is false, setting owner reference")
 		// set owner reference
 		err = ctrl.SetControllerReference(secret, k8sSecret, r.Scheme)
 		if err != nil {
@@ -158,6 +223,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
+	logr.Info("creating or updating secret")
 	opRslt, err := controllerutil.CreateOrUpdate(ctx, r.Client, k8sSecret, func() error {
 		// we don't need to update the secret, as the secret is defined already above
 		return nil
