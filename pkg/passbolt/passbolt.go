@@ -113,8 +113,10 @@ func (c *Client) Close(ctx context.Context) error {
 	return c.passboltClient.Logout(ctx)
 }
 
-// GetSecret retrieves the secret value for the given secret ID.
-// The secret value is returned as a string.
+// GetSecret retrieves the secret value for the given secret name.
+// Under the hook, this function queries the internal cache for the secret ID by name.
+// If the secret is not in the cache, an error is returned.
+// If the secret is in the cache, the secret is retrieved from passbolt.
 func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDefinition, error) {
 	// prevent concurrent access to the cache
 	c.mu.Lock()
