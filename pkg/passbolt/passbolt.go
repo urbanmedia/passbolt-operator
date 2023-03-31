@@ -115,7 +115,7 @@ func (c *Client) Close(ctx context.Context) error {
 
 // GetSecret retrieves the secret value for the given secret ID.
 // The secret value is returned as a string.
-func (c *Client) GetSecret(ctx context.Context, name string, fieldName passboltv1alpha2.FieldName) (*PassboltSecretDefinition, error) {
+func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDefinition, error) {
 	// prevent concurrent access to the cache
 	c.mu.Lock()
 	defer c.mu.Unlock()
