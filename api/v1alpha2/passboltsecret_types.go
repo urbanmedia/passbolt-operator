@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -98,6 +100,10 @@ type SyncError struct {
 	SecretKey string `json:"secretKey"`
 	// Time is the time the error occurred.
 	Time metav1.Time `json:"time"`
+}
+
+func (s SyncError) Error() string {
+	return fmt.Sprintf("failed to sync secret %s/%s: %s", s.SecretName, s.SecretKey, s.Message)
 }
 
 // PassboltSecretStatus defines the observed state of PassboltSecret
