@@ -39,6 +39,7 @@ import (
 
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	//+kubebuilder:scaffold:imports
+	corev1 "k8s.io/api/core/v1"
 
 	_ "embed"
 )
@@ -199,15 +200,23 @@ var _ = BeforeSuite(func() {
 	err = passboltv1alpha2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = corev1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	// setup manager
+	// setup manager and webhook server
+	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme:             scheme.Scheme,
+		Host:               webhookInstallOptions.LocalServingHost,
+		Port:               webhookInstallOptions.LocalServingPort,
+		CertDir:            webhookInstallOptions.LocalServingCertDir,
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
 	})
 	Expect(err).ToNot(HaveOccurred())
 
@@ -217,6 +226,14 @@ var _ = BeforeSuite(func() {
 		PassboltClient: passboltClient,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
+
+	if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(k8sManager); err != nil {
+		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret")
+
+	}
+	if err = (&passboltv1alpha2.PassboltSecret{}).SetupWebhookWithManager(k8sManager); err != nil {
+		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret")
+	}
 
 	go func() {
 		defer GinkgoRecover()
