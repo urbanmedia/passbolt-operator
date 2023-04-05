@@ -142,24 +142,24 @@ docker_manifests:
 
   - name_template: tagesspiegel/passbolt-operator:v{{ .Major }}
     image_templates:
-      - tagesspiegel/passbolt-operator:v{{ .Major }}-amd64
-      - tagesspiegel/passbolt-operator:v{{ .Major }}-arm64
-      - tagesspiegel/passbolt-operator:v{{ .Major }}-s390x
-      - tagesspiegel/passbolt-operator:v{{ .Major }}-ppc64le
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-amd64{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-arm64{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-s390x{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-ppc64le{{ end }}"
 
   - name_template: tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}
     image_templates:
-      - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-amd64
-      - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-arm64
-      - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-s390x
-      - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-ppc64le
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-amd64{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-arm64{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-s390x{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-ppc64le{{ end }}"
 
   - name_template: tagesspiegel/passbolt-operator:latest
     image_templates:
-      - tagesspiegel/passbolt-operator:latest-amd64
-      - tagesspiegel/passbolt-operator:latest-arm64
-      - tagesspiegel/passbolt-operator:latest-s390x
-      - tagesspiegel/passbolt-operator:latest-ppc64le
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-amd64{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-arm64{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-s390x{{ end }}"
+      - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-ppc64le{{ end }}"
 
 checksum:
   name_template: 'checksums.txt'
