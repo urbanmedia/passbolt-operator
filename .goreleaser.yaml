@@ -134,6 +134,7 @@ dockers:
 docker_manifests:
   # https://goreleaser.com/customization/docker_manifest/
   - name_template: tagesspiegel/passbolt-operator:{{.Tag}}
+    skip_push: false
     image_templates:
       - tagesspiegel/passbolt-operator:{{.Tag}}-amd64
       - tagesspiegel/passbolt-operator:{{.Tag}}-arm64
@@ -141,6 +142,7 @@ docker_manifests:
       - tagesspiegel/passbolt-operator:{{.Tag}}-ppc64le
 
   - name_template: tagesspiegel/passbolt-operator:v{{ .Major }}
+    skip_push: auto
     image_templates:
       - tagesspiegel/passbolt-operator:v{{ .Major }}-amd64
       - tagesspiegel/passbolt-operator:v{{ .Major }}-arm64
@@ -148,6 +150,7 @@ docker_manifests:
       - tagesspiegel/passbolt-operator:v{{ .Major }}-ppc64le
 
   - name_template: tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}
+    skip_push: auto
     image_templates:
       - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-amd64
       - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-arm64
@@ -155,6 +158,7 @@ docker_manifests:
       - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-ppc64le
 
   - name_template: tagesspiegel/passbolt-operator:latest
+    skip_push: auto
     image_templates:
       - tagesspiegel/passbolt-operator:latest-amd64
       - tagesspiegel/passbolt-operator:latest-arm64
