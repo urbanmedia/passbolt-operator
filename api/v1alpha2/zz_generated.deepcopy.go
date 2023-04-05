@@ -92,7 +92,6 @@ func (in *PassboltSecretSpec) DeepCopyInto(out *PassboltSecretSpec) {
 		*out = new(string)
 		**out = **in
 	}
-
 	if in.Secrets != nil {
 		in, out := &in.Secrets, &out.Secrets
 		*out = make([]SecretSpec, len(*in))
