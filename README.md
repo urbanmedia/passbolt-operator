@@ -18,25 +18,30 @@ metadata:
   namespace: default
 spec:
   leaveOnDelete: false
+  secretType: Opaque
   secrets:
-    - kubernetesSecretKey: ""
+    - kubernetesSecretKey: "username"
       passboltSecret:
-        name: ""
+        name: "EXAMPLE_APP"
         field: username
-    - kubernetesSecretKey: ""
+    - kubernetesSecretKey: "pg_dsn"
       passboltSecret:
-        name: ""
-        value: user={{.Username}} password={{.Password}} host={{.URI}}
+        name: "EXAMPLE_APP"
+        value: postgres://{{ .Username }}@{{ .URI }}/mydb?sslmode=disable&password={{ .Password }}
 ```
 
 The `PassboltSecret` resource contains the following fields:
 
-- `leaveOnDelete`: A boolean that indicates if the Passbolt Operator should leave the Kubernetes Secret on deletion of the `PassboltSecret` resource. Defaults to `false`.
-- `secrets`: A list of Passbolt credentials that you want to synchronize with Kubernetes Secrets. Each Passbolt credential is defined by the following fields:
-  - `passboltSecret.name`: The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
-  - `passboltSecret.field`: The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets.
-  - `passboltSecret.value`: A Go template value of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Supported variables are: `Username`, `Password`, `URI`. The `passboltSecret.value` field is mutually exclusive with the `passboltSecret.field` field.
-  - `kubernetesSecretKey`: The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential.
+| Field | Type | Default | Required | Condition | Description |
+| ----- | ---- | ------- | -------- | --------- | ----------- |
+| `leaveOnDelete` | `bool` | `false` | false | - | A boolean that indicates if the Passbolt Operator should leave the Kubernetes Secret on deletion of the `PassboltSecret` resource. |
+| `secretType` | `string` | `Opaque` | false | - | The type of the Kubernetes Secret. Can be either `Opaque` or `kubernetes.io/dockerconfigjson`. If the `secretType` is `kubernetes.io/dockerconfigjson`, the `passboltSecretName` field is required. If the `secretType` is `Opaque`, the `secrets` field is required. |
+| `passboltSecretName` | `string` | - | false | `secretType` is `kubernetes.io/dockerconfigjson` | The name of the Passbolt credential that contains the Docker configuration (URI, Username, Password). |
+| `secrets` | `[]Secret` | - | false | `secretType` is `Opaque` | A list of Passbolt credentials that you want to synchronize with Kubernetes Secrets. |
+| `secrets[*].kubernetesSecretKey` | `string` | - | true | - | The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential. |
+| `secrets[*].passboltSecret.name` | `string` | - | true | - | The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets. |
+| `secrets[*].passboltSecret.field` | `string` | - | false | - | The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Can be one of: `username`, `password`, `uri` |
+| `secrets[*].passboltSecret.value` | `string` | - | false | - | A Go template value of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Supported variables are: `Username`, `Password`, `URI`. The `secrets[*].passboltSecret.value` field is mutually exclusive with the `secrets[*].passboltSecret.field` field. |
 
 The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets. The Passbolt Operator will create a Kubernetes Secret with the name `passbolt-secret-name` in the namespace `default`. The resulting Kubernetes Secret is defined as follows:
 
@@ -48,16 +53,17 @@ metadata:
   namespace: default
 type: Opaque
 data:
-  KUBERNETES_SECRET_KEY: PASSBOLT_SECRET_NAME
+  username: example
+  pg_dsn: postgres://example@db.example.com:5432/mydb?sslmode=disable&password=example
 ```
 
 Under the hood, the Passbolt Operator does the following during the reconciliation loop:
 
 1. Retrieve the Passbolt CRD from Kubernetes.
-2. Retrieve the `secrets[*].name` credentials from Passbolt.
-3. Create a Kubernetes secret with the name `passbolt-secret-name` in the namespace `default` with the `secrets[*].kubernetesSecretKey` key and the `secrets[*].name` value.
+2. Retrieve the `secrets[*].passboltSecret.name` credentials from Passbolt.
+3. Create a Kubernetes secret with the name `passbolt-secret-name` in the namespace `default` with the `secrets[*].kubernetesSecretKey` key and the `secrets[*].passboltSecret.name` value.
 
-If an error occurs during the reconciliation loop, the Passbolt Operator will retry to reconcile the `PassboltSecret` after 30 seconds and increments the `status.reconcileErrorCount` field. If the `status.reconcileErrorCount` field is greater than 5, the Passbolt Operator will stop reconciling the `PassboltSecret` for a period of 30 minutes (except configuration changes).
+If an error occurs during the reconciliation loop, the Passbolt Operator will update the `.status.syncStatus` field to `Error` and adds the error message to the `.status.syncErrors` field of the `PassboltSecret` resource. If the reconciliation loop is successful, the Passbolt Operator will update the `.status.syncStatus` field of the `PassboltSecret` resource with the message `Success`.
 
 ### Installation
 
