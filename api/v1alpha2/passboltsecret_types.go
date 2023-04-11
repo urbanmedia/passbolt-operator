@@ -30,7 +30,7 @@ import (
 type PassboltSecretSpec struct {
 	// LeaveOnDelete defines if the secret should be deleted from Kubernetes when the PassboltSecret is deleted.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=true
+	// +kubebuilder:default:=false
 	LeaveOnDelete bool `json:"leaveOnDelete,omitempty"`
 	// SecretType is the type of the secret. Defaults to Opaque.
 	// If set to kubernetes.io/dockerconfigjson, the secret will be created as a docker config secret.
