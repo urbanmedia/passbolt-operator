@@ -144,7 +144,7 @@ func main() {
 				defer cf()
 				err := clnt.LoadCache(ctx)
 				if err != nil {
-					cacheLog.Error(err, "unable to load passbolt cache")
+					cacheLog.Error(err, "unable to load passbolt cache", "errorCounter", errorCounter)
 					if errorCounter > loadCacheErrorRetryCounterReLogin {
 						if errorCounter >= loadCacheErrorRetryCounterExit {
 							// we exit here, because we failed to load the cache 3 times in a row
