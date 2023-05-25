@@ -40,6 +40,15 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
+const (
+	// loadCacheErrorRetryCounterReLogin defines how often we retry to re-login after a failed login attempt
+	// must always be less than loadCacheErrorRetryCounterExit
+	loadCacheErrorRetryCounterReLogin = 2
+	// loadCacheErrorRetryCounterExit defines how often we retry to re-login after which we exit the program
+	// must always be greater than loadCacheErrorRetryCounterReLogin
+	loadCacheErrorRetryCounterExit = 3
+)
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -122,9 +131,12 @@ func main() {
 		done <- true
 	}()
 	go func() {
+		// define an error counter to prevent the operator from running in a broken state
+		errorCounter := 0
 		for {
 			select {
 			case <-done:
+				// we exit here, because the ticker is stopped
 				return
 			case <-ticker.C:
 				cacheLog.Info("loading passbolt cache")
@@ -133,8 +145,25 @@ func main() {
 				err := clnt.LoadCache(ctx)
 				if err != nil {
 					cacheLog.Error(err, "unable to load passbolt cache")
+					if errorCounter > loadCacheErrorRetryCounterReLogin {
+						if errorCounter >= loadCacheErrorRetryCounterExit {
+							// we exit here, because we failed to load the cache 3 times in a row
+							// this is to prevent the operator from running in a broken state
+							os.Exit(1)
+						}
+						// try to re-login to passbolt
+						err := clnt.ReLogin(ctx)
+						if err != nil {
+							cacheLog.Error(err, "unable to re-login to passbolt")
+							// we tried to re-login, but failed
+							os.Exit(1)
+						}
+					}
+					errorCounter++
 					// we don't exit here, because we want to continue with the next tick
+					continue
 				}
+				errorCounter = 0
 			}
 		}
 	}()
