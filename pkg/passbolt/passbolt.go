@@ -140,3 +140,18 @@ func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDef
 	}
 	return secret, nil
 }
+
+// ReLogin logs out of the passbolt client and logs in again.
+// This is useful if the session has expired.
+// This function should be called before any other function.
+func (c *Client) ReLogin(ctx context.Context) error {
+	err := c.Close(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to close passbolt client: %w", err)
+	}
+	err = c.passboltClient.Login(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to re-login to passbolt: %w", err)
+	}
+	return nil
+}

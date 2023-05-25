@@ -467,3 +467,48 @@ func TestClient_GetSecret(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_ReLogin(t *testing.T) {
+	type fields struct {
+		client *Client
+	}
+	type args struct {
+		ctx context.Context
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "re-login to passbolt",
+			fields: fields{
+				client: func() *Client {
+					clnt, err := NewClient(
+						context.Background(),
+						passboltURL,
+						passboltUsername,
+						passboltPassword,
+					)
+					if err != nil {
+						t.Errorf("failed to create passbolt client: %v", err)
+						return nil
+					}
+					return clnt
+				}(),
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.fields.client.ReLogin(tt.args.ctx); (err != nil) != tt.wantErr {
+				t.Errorf("Client.ReLogin() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
