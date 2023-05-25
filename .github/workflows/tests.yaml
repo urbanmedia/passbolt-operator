@@ -303,7 +303,8 @@ jobs:
             --namespace cert-manager \
             --create-namespace \
             --set installCRDs=true \
-            --set prometheus.enabled=false
+            --set prometheus.enabled=false \
+            --version v1.11.0
 
       - name: Deploy CRDs
         run: |
