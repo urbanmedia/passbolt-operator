@@ -69,34 +69,34 @@ func (r *PassboltSecret) validatePassboltSecret() error {
 	switch r.Spec.SecretType {
 	case corev1.SecretTypeOpaque:
 		if r.Spec.PassboltSecretName != nil {
-			return fmt.Errorf("%w for secret type %s", ErrPassboltSecretNameIsNotAllowed, r.Spec.SecretType)
+			return fmt.Errorf("%w for secret %s.%s type %s", ErrPassboltSecretNameIsNotAllowed, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		if len(r.Spec.Secrets) == 0 {
-			return fmt.Errorf("%w for secret type %s", ErrSecretsAreRequired, r.Spec.SecretType)
+			return fmt.Errorf("%w for secret %s.%s type %s", ErrSecretsAreRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		// check if only FieldName or Value is set
 		for _, secret := range r.Spec.Secrets {
 			if secret.PassboltSecret.Field == "" && secret.PassboltSecret.Value == nil {
-				return fmt.Errorf("%w for secret %s and field %v", ErrFieldOrValueIsRequired, r.GetName(), secret)
+				return fmt.Errorf("%w for secret %s.%s and field %v", ErrFieldOrValueIsRequired, r.GetName(), r.GetNamespace(), secret)
 			}
 			if secret.PassboltSecret.Field != "" && secret.PassboltSecret.Value != nil {
-				return fmt.Errorf("%w for secret %s and field %v", ErrFieldAndValueAreNotAllowed, r.GetName(), secret)
+				return fmt.Errorf("%w for secret %s.%s and field %v", ErrFieldAndValueAreNotAllowed, r.GetName(), r.GetNamespace(), secret)
 			}
 		}
 		return nil
 	case corev1.SecretTypeDockerConfigJson:
 		if r.Spec.PassboltSecretName == nil {
-			return fmt.Errorf("%w: %s", ErrPassboltSecretNameIsRequired, r.Spec.SecretType)
+			return fmt.Errorf("%w for secret %s.%s: %s", ErrPassboltSecretNameIsRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		if *r.Spec.PassboltSecretName == "" {
-			return fmt.Errorf("%w: %s", ErrPassboltSecretNameIsRequired, r.Spec.SecretType)
+			return fmt.Errorf("%w for secret %s.%s: %s", ErrPassboltSecretNameIsRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		if len(r.Spec.Secrets) > 0 {
-			return fmt.Errorf("%w for secret type %s", ErrSecretsAreNotAllowed, r.Spec.SecretType)
+			return fmt.Errorf("%w for secret %s.%s type %s", ErrSecretsAreNotAllowed, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		return nil
 	default:
-		return fmt.Errorf("%w: %s", ErrInvalidSecretType, r.Spec.SecretType)
+		return fmt.Errorf("%w %s.%s: %s", ErrInvalidSecretType, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 	}
 }
 
