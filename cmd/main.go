@@ -135,23 +135,22 @@ func main() {
 				return
 			// refresh cache every X ticks
 			case <-ticker.C:
-				cacheLog.Info("loading passbolt cache")
+				cacheLog.Info("refeshing passbolt cache")
 				ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cf()
 
 				lastErr := false
-				err := util.Retry(ctx, cacheLoadRetries, 5, func(ctx context.Context) error {
-					cacheLog.Info("retrying to authenticate to passbolt")
+				err := util.Retry(ctx, cacheLoadRetries, 10, func(ctx context.Context) error {
 					if lastErr {
+						cacheLog.Info("retrying to authenticate to passbolt")
 						// we already failed once, so we try to re-login
 						if err := clnt.ReLogin(ctx); err != nil {
-							cacheLog.Error(err, "unable to re-login to passbolt")
 							return err
 						}
 					}
+					cacheLog.Info("querying secrets from passbolt...")
 					err := clnt.LoadCache(ctx)
 					if err != nil {
-						cacheLog.Error(err, "unable to load passbolt cache")
 						lastErr = true
 						return err
 					}
@@ -169,8 +168,9 @@ func main() {
 	}()
 
 	if err = (&controller.PassboltSecretReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+		PassboltClient: clnt,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PassboltSecret")
 		os.Exit(1)
