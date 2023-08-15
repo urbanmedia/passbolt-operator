@@ -1,9 +1,24 @@
 # More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
 # Ignore build and test binaries.
-**
-!controllers/
-!api/
-!pkg/
-!go.mod
-!go.sum
-!main.go
+
+# folders
+_data/
+.github/
+bin/
+config/
+e2e/
+hack/
+
+# files
+.envrc
+.gitignore
+.goreleaser.yaml
+CODE_OF_CONDUCT.md
+docker-compose.yaml
+Dockerfile
+Dockerfile.dev
+LICENSE
+Makefile
+PROJECT.md
+README.md
+SECURITY.md
