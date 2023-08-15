@@ -109,11 +109,11 @@ var _ = Describe("Run Controller", func() {
 			time.Sleep(5 * time.Second)
 
 			By("By checking if PassboltSecret was created")
-			pbGetSecret := &passboltv1alpha1.PassboltSecret{}
+			pbGetSecret := &passboltv1alpha2.PassboltSecret{}
 			Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pbGetSecret), timeout, interval).Should(Succeed())
 
 			By("By checking if PassboltSecret has the correct sync status")
-			Expect(pbGetSecret.Status.SyncStatus).Should(Equal(passboltv1alpha1.SyncStatusSuccess))
+			Expect(pbGetSecret.Status.SyncStatus).Should(Equal(passboltv1alpha2.SyncStatusSuccess))
 
 			By("By checking if Secret was created")
 			secret := &corev1.Secret{}
@@ -127,12 +127,12 @@ var _ = Describe("Run Controller", func() {
 			Expect(secret.Data).Should(HaveKey("password"))
 
 			By("By checking if Secret can be updated")
-			pbGetSecret.Spec.Secrets = []passboltv1alpha1.SecretSpec{
+			pbGetSecret.Spec.Secrets = []passboltv1alpha2.SecretSpec{
 				{
 					KubernetesSecretKey: "dsn",
-					PassboltSecret: passboltv1alpha1.PassboltSpec{
+					PassboltSecret: passboltv1alpha2.PassboltSpec{
 						Name:  "APP_EXAMPLE",
-						Field: passboltv1alpha1.FieldNameUsername,
+						Field: passboltv1alpha2.FieldNameUsername,
 					},
 				},
 			}
