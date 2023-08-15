@@ -292,6 +292,12 @@ jobs:
       - name: Start the other containers
         run: docker-compose up -d
 
+      - name: Install Prometheus Operator CRDs
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm install prometheus-operator-crds prometheus-community/prometheus-operator-crds
+
       - name: Install cert-manager
         run: |
           helm repo add jetstack https://charts.jetstack.io
