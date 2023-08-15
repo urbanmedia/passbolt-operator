@@ -139,17 +139,23 @@ func main() {
 				ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cf()
 
+				lastErr := false
 				err := util.Retry(ctx, cacheLoadRetries, 5, func(ctx context.Context) error {
 					cacheLog.Info("retrying to authenticate to passbolt")
-					if err := clnt.ReLogin(ctx); err != nil {
-						cacheLog.Error(err, "unable to re-login to passbolt")
-						return err
+					if lastErr {
+						// we already failed once, so we try to re-login
+						if err := clnt.ReLogin(ctx); err != nil {
+							cacheLog.Error(err, "unable to re-login to passbolt")
+							return err
+						}
 					}
 					err := clnt.LoadCache(ctx)
 					if err != nil {
 						cacheLog.Error(err, "unable to load passbolt cache")
+						lastErr = true
 						return err
 					}
+					lastErr = false
 					return nil
 				})
 				if err != nil {
