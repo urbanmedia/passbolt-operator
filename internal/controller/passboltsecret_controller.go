@@ -105,6 +105,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			Annotations: secret.Annotations,
 		},
 		Type: secret.Spec.SecretType,
+		Data: map[string][]byte{},
 	}
 
 	opRslt, err := controllerutil.CreateOrUpdate(ctx, r.Client, k8sSecret, util.UpdateSecret(ctx, r.PassboltClient, r.Scheme, secret, k8sSecret))
