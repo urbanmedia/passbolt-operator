@@ -67,7 +67,7 @@ spec:
         #   type: RuntimeDefault
       containers:
       - command:
-        - /manager
+        - /controller
         args:
         - --leader-elect
         image: controller:latest
@@ -89,14 +89,28 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        # TODO(user): Configure the resources accordingly based on the project requirements.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        env:
+          - name: PASSBOLT_URL
+            valueFrom:
+              secretKeyRef:
+                name: controller-passbolt-secret
+                key: url
+          - name: PASSBOLT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: controller-passbolt-secret
+                key: password
+          - name: PASSBOLT_GPG
+            valueFrom:
+              secretKeyRef:
+                name: controller-passbolt-secret
+                key: gpg_key
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 512Mi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: 500m
+            memory: 512Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
