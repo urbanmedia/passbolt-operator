@@ -19,8 +19,6 @@ resources:
   version: v1alpha1
   webhooks:
     conversion: true
-    defaulting: true
-    validation: true
     webhookVersion: v1
 - api:
     crdVersion: v1
@@ -32,7 +30,6 @@ resources:
   path: github.com/urbanmedia/passbolt-operator/api/v1alpha2
   version: v1alpha2
   webhooks:
-    conversion: true
     defaulting: true
     validation: true
     webhookVersion: v1
