@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
@@ -39,6 +41,13 @@ type PassboltSecretReconciler struct {
 	Scheme         *runtime.Scheme
 	PassboltClient *passbolt.Client
 }
+
+var (
+	errResult = ctrl.Result{
+		Requeue:      true,
+		RequeueAfter: 30 * time.Second,
+	}
+)
 
 //+kubebuilder:rbac:groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=passbolt.tagesspiegel.de,resources=passboltsecrets/status,verbs=get;update;patch
@@ -56,7 +65,6 @@ type PassboltSecretReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logr := log.FromContext(ctx)
-
 	logr.Info("reconciling PassboltSecret", "name", req.NamespacedName)
 
 	// get passbolt secret resource from Kubernetes
@@ -64,22 +72,12 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	err := r.Client.Get(ctx, req.NamespacedName, secret)
 	if err != nil {
 		if err = client.IgnoreNotFound(err); err != nil {
-			return ctrl.Result{}, err
+			return errResult, err
 		}
-		return ctrl.Result{}, nil
+		return errResult, err
 	}
 	// cleanup status
 	secret.Status.SyncErrors = []passboltv1alpha2.SyncError{}
-
-	// create status update function
-	updateStatus := func(ctx context.Context, passboltSecret *passboltv1alpha2.PassboltSecret) error {
-		err := r.Client.Status().Update(ctx, passboltSecret)
-		if err != nil {
-			logr.Error(err, "unable to update PassboltSecret status")
-			return err
-		}
-		return nil
-	}
 
 	// make sure that the secret type is supported
 	if secret.Spec.SecretType != corev1.SecretTypeOpaque && secret.Spec.SecretType != corev1.SecretTypeDockerConfigJson {
@@ -89,11 +87,10 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			Message: fmt.Sprintf("unsupported secret type %q", secret.Spec.SecretType),
 			Time:    metav1.Now(),
 		})
-		if err := updateStatus(ctx, secret); err != nil {
-			logr.Error(err, "unable to update status")
-			return ctrl.Result{}, err
+		if err := r.Client.Status().Update(ctx, secret); err != nil {
+			return errResult, err
 		}
-		return ctrl.Result{}, nil
+		return errResult, nil
 	}
 
 	// define Kubernetes secret to be created or updated
@@ -113,14 +110,12 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if snErr, ok := err.(passboltv1alpha2.SyncError); ok {
 			secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
 			secret.Status.SyncErrors = append(secret.Status.SyncErrors, snErr)
-			if err := updateStatus(ctx, secret); err != nil {
-				logr.Error(err, "unable to update status")
-				return ctrl.Result{}, err
+			if err := r.Client.Status().Update(ctx, secret); err != nil {
+				return errResult, err
 			}
-			return ctrl.Result{}, nil
+			return errResult, err
 		}
-		logr.Error(err, "unable to create or update secret")
-		return ctrl.Result{}, err
+		return errResult, err
 	}
 
 	if opRslt == controllerutil.OperationResultNone {
@@ -134,13 +129,11 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	secret.Status.LastSync = metav1.Now()
 	err = r.Client.Status().Update(ctx, secret)
 	if err != nil {
-		logr.Error(err, "unable to update PassboltSecret status")
-		// we don't return an error here, as the secret was successfully synced
-		return ctrl.Result{}, nil
+		// the secret was synced successfully but the status could not be updated
+		return reconcile.Result{}, err
 	}
 
 	logr.Info("reconcile complete", "name", req.NamespacedName)
-
 	return ctrl.Result{}, nil
 }
 
