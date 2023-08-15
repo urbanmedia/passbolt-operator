@@ -1,0 +1,348 @@
+name: unit-and-e2e-tests
+
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - "*.md"
+      - LICENSE
+      - docker-compose*
+      - .dockerignore
+      #- .github/
+      - .gitignore
+      - .gitmodules
+      - docs/
+      - hack/
+      - Makefile
+      - PROJECT
+      - charts/**
+  pull_request:
+    branches:
+      - "!dependabot/**"
+
+env:
+  go_version: 1.19
+  artifact_name: passbolt-operator
+  artifact_bin_name: kubebuilder
+  IMG: tagesspiegel/passbolt-operator:dev
+
+jobs:
+  vetting:
+    name: vetting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: true
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: vetting
+        shell: bash
+        run: go vet ./...
+
+  linting:
+    name: linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: true
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=3m --issues-exit-code=1 ./...
+          only-new-issues: true
+
+  unit-tests:
+    name: unit tests
+    runs-on: ubuntu-latest
+    needs:
+      - vetting
+      - linting
+    env:
+      LOG_DIR: logs
+      FORMATTED_LOG_FOLDER_NAME: ""
+    steps:
+      - name: Install go ${{ env.go_version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Modify _dist/ permissions
+        run: |
+          sudo chmod -R a+rw _data/pb_jwt
+          sudo chmod -R a+rw _data/pb_gpg
+
+      - name: Start Mysql database container
+        run: docker-compose up -d db
+
+      - name: Install mysql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+          sleep 5;
+
+      - run: docker ps -a
+
+      - name: Restore database
+        run: |
+          mysql \
+            --host=127.0.0.1 \
+            --port=13306 \
+            --database=passbolt \
+            --user=passbolt \
+            --password=P4ssb0lt < _data/passbolt_db.sql
+
+      - name: Start the other containers
+        run: docker-compose up -d
+
+      - run: docker-compose ps -a
+
+      - name: Wait for Passbolt to be ready with a 1 minute timeout
+        run: |
+          timeout 1m bash -c 'until [[ "$(curl -l -s -o /dev/null -w ''%{http_code}'' http://localhost:8088/auth/login?)" == "200" ]]; do sleep 5; done'
+
+      - if: always()
+        run: docker-compose ps -a
+
+      #- if: always()
+      #  run: |
+      #    echo FORMATTED_LOG_FOLDER_NAME=$(echo "${{ matrix.kind_node_image }}" | sed -e "s+/+-+g" -e "s+:+-+g") >> $GITHUB_ENV
+
+      - name: Create log folder
+        if: always()
+        run: mkdir -p $LOG_DIR/${{ env.FORMATTED_LOG_FOLDER_NAME }}/
+
+      - name: Store container logs
+        if: always()
+        id: deps_logs
+        shell: bash
+        run: |
+          docker logs passbolt >& $LOG_DIR/${{ env.FORMATTED_LOG_FOLDER_NAME }}/passbolt.log
+          docker logs db >& $LOG_DIR/${{ env.FORMATTED_LOG_FOLDER_NAME }}/db.log
+          echo "OUTPUT=0" >> $GITHUB_OUTPUT
+
+      - name: Upload docker logs artifact
+        if: ${{ always() && (steps.deps_logs.outputs.OUTPUT == 0) }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker_container_logs
+          path: |
+            ${{ env.LOG_DIR }}/
+          retention-days: 3
+
+      - name: Setup Env
+        run: |
+          ./_data/credentials.sh
+
+      - name: Run unit tests
+        run: make test
+
+  prepare-bin:
+    name: prepare-bin
+    runs-on: ubuntu-latest
+    needs:
+      - vetting
+      - linting
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Download binaries
+        run: |
+          make kustomize controller-gen envtest
+
+      - name: Upload bin directory
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.artifact_bin_name }}
+          path: bin/
+          retention-days: 1
+
+  build-temp-image:
+    name: build docker image
+    runs-on: ubuntu-latest
+    needs:
+      - vetting
+      - linting
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Build image
+        run: |
+          make docker-build
+
+      - name: Save image
+        run: |
+          make docker-save
+
+      - name: Upload image
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.artifact_name }}
+          path: manager.tar
+          retention-days: 1
+
+  end-to-end-tests:
+    name: e2e tests
+    runs-on: ubuntu-latest
+    needs:
+      - vetting
+      - linting
+      - build-temp-image
+      - prepare-bin
+    env:
+      KUBERNETES_NAMESPACE: kubernetes-passbolt-operator-system
+    strategy:
+      fail-fast: false
+      matrix:
+        kind_node_image:
+          - kindest/node:v1.26.0
+          - kindest/node:v1.25.3
+          - kindest/node:v1.24.7
+          - kindest/node:v1.23.13
+          - kindest/node:v1.22.15
+          - kindest/node:v1.21.14
+    steps:
+      - name: Install go ${{ env.go_version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.go_version }}
+
+      - uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.artifact_name }}
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.artifact_bin_name }}
+          path: bin/
+
+      - run: |
+          sudo chown -R $USER:$USER bin/
+          sudo chmod -R a+rwx bin/
+
+      - name: Load image
+        run: |
+          make docker-load
+
+      - name: Create K8s Kind Cluster
+        uses: helm/kind-action@v1.7.0
+        with:
+          node_image: ${{ matrix.kind_node_image }}
+          cluster_name: passbolt-operator-e2e
+
+      - name: Load image into kind cluster
+        run: |
+          kind load docker-image ${{ env.IMG }} --name passbolt-operator-e2e
+
+      - name: Start Mysql database container
+        run: docker-compose up -d db
+
+      - name: Install mysql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+          sleep 5;
+
+      - run: docker ps -a
+
+      - name: Restore database
+        run: |
+          mysql \
+            --host=127.0.0.1 \
+            --port=13306 \
+            --database=passbolt \
+            --user=passbolt \
+            --password=P4ssb0lt < _data/passbolt_db.sql
+
+      - run: |
+          echo "PASSBOLT_HOST=$(hostname -I | awk '{print $1}')" >> $GITHUB_ENV
+
+      - name: Start the other containers
+        run: docker-compose up -d
+
+      - name: Install cert-manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install \
+            cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --set installCRDs=true \
+            --set prometheus.enabled=false \
+            --version v1.11.0
+
+      - name: Deploy CRDs
+        run: |
+          make install
+
+      - name: Create namespace and secret
+        run: |
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl create secret generic controller-passbolt-secret \
+            --from-file=gpg_key=_data/passbolt_gpg.key \
+            --from-literal=password='TestTest123!' \
+            --from-literal=url=http://${PASSBOLT_HOST}:8088 \
+            --namespace ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Deploy operator
+        run: |
+          make deploy
+
+      - name: Wait and check operator is running
+        run: |
+          sleep 20
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Get operator logs
+        if: always()
+        run: |
+          kubectl logs --tail 10000 -n ${{ env.KUBERNETES_NAMESPACE }} $(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} | grep passbolt-operator-controller-manager | awk '{print $1}') -c manager
+
+      - name: Describe operator pod
+        if: always()
+        run: |
+          kubectl describe pod -n ${{ env.KUBERNETES_NAMESPACE }} $(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} | grep passbolt-operator-controller-manager | awk '{print $1}')
+
+      - name: Run e2e tests
+        run: |
+          make test-e2e
+
+      - name: Get operator logs
+        if: always()
+        run: |
+          kubectl logs --tail 10000 -n ${{ env.KUBERNETES_NAMESPACE }} $(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} | grep passbolt-operator-controller-manager | awk '{print $1}') -c manager

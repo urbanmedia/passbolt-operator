@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- passbolt_v1alpha1_passboltsecret.yaml
+- passbolt_v1alpha2_passboltsecret.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

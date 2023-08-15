@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2023 Verlag der Tagesspiegel GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import (
 
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
-	"github.com/urbanmedia/passbolt-operator/controllers"
+	"github.com/urbanmedia/passbolt-operator/internal/controller"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	//+kubebuilder:scaffold:imports
 )
@@ -168,10 +168,9 @@ func main() {
 		}
 	}()
 
-	if err = (&controllers.PassboltSecretReconciler{
-		Client:         mgr.GetClient(),
-		Scheme:         mgr.GetScheme(),
-		PassboltClient: clnt,
+	if err = (&controller.PassboltSecretReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PassboltSecret")
 		os.Exit(1)
