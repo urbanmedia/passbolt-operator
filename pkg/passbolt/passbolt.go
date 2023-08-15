@@ -24,8 +24,61 @@ import (
 
 	"github.com/passbolt/go-passbolt/api"
 	"github.com/passbolt/go-passbolt/helper"
+	"github.com/prometheus/client_golang/prometheus"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
+
+var (
+	passboltSecretGetAttemptsTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "passbolt_secret_get_attempts_total",
+			Help: "Number of attempts to get a secret from passbolt.",
+		},
+	)
+	passboltSecretGetFailureAttemptsTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "passbolt_secret_get_failure_attempts_total",
+			Help: "Number of failure attempts to get a secret from passbolt.",
+		},
+	)
+	passboltReLogins = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "passbolt_relogins_total",
+			Help: "Number of re-logins attempts to passbolt.",
+		},
+	)
+	passboltReLoginFailures = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "passbolt_relogin_errors_total",
+			Help: "Number of re-login error attempts to passbolt.",
+		},
+	)
+	passboltCacheSync = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "passbolt_cache_sync_total",
+			Help: "Number of cache syncs with passbolt.",
+		},
+	)
+	passboltCacheFailures = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "passbolt_cache_sync_errors_total",
+			Help: "Number of cache sync errors.",
+		},
+	)
+)
+
+func init() {
+	// Register custom metrics with the global prometheus registry
+	metrics.Registry.MustRegister(
+		passboltSecretGetAttemptsTotal,
+		passboltSecretGetFailureAttemptsTotal,
+		passboltReLogins,
+		passboltReLoginFailures,
+		passboltCacheSync,
+		passboltCacheFailures,
+	)
+}
 
 type PassboltSecretDefinition struct {
 	FolderParentID string
@@ -90,12 +143,14 @@ func NewClient(ctx context.Context, url, username, password string) (*Client, er
 // Instead, we must retrieve all secrets and their UUIDs.
 // This is not ideal, but it is the only way to retrieve secrets by name.
 func (c *Client) LoadCache(ctx context.Context) error {
+	passboltCacheSync.Inc()
 	// prevent concurrent access to the cache
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	// retrieve all secrets
 	resources, err := c.passboltClient.GetResources(ctx, &api.GetResourcesOptions{})
 	if err != nil {
+		passboltCacheFailures.Inc()
 		return fmt.Errorf("failed to get secrets: %w", err)
 	}
 	// fill the cache
@@ -118,16 +173,19 @@ func (c *Client) Close(ctx context.Context) error {
 // If the secret is not in the cache, an error is returned.
 // If the secret is in the cache, the secret is retrieved from passbolt.
 func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDefinition, error) {
+	passboltSecretGetAttemptsTotal.Inc()
 	// prevent concurrent access to the cache
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	// check if the secret is in the cache
 	if _, ok := c.secretCache[name]; !ok {
+		passboltSecretGetFailureAttemptsTotal.Inc()
 		return nil, fmt.Errorf("unable to find secret in cache with name %q", name)
 	}
 	// retrieve the secret
 	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, c.secretCache[name])
 	if err != nil {
+		passboltSecretGetFailureAttemptsTotal.Inc()
 		return nil, fmt.Errorf("failed to get secret with name %q: %w", name, err)
 	}
 	secret := &PassboltSecretDefinition{
@@ -145,8 +203,10 @@ func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDef
 // This is useful if the session has expired.
 // This function should be called before any other function.
 func (c *Client) ReLogin(ctx context.Context) error {
+	passboltReLogins.Inc()
 	err := c.passboltClient.Login(ctx)
 	if err != nil {
+		passboltReLoginFailures.Inc()
 		return fmt.Errorf("failed to re-login to passbolt: %w", err)
 	}
 	return nil
