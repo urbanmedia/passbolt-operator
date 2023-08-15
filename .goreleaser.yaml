@@ -1,0 +1,236 @@
+project_name: passbolt-operator
+
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+builds:
+  - id: controller
+    main: cmd/main.go
+    binary: controller
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - arm64
+      - s390x
+      - ppc64le
+    goarm:
+      - "7"
+    goos:
+      - linux
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    builds:
+      - controller
+    files:
+      - LICENSE
+      - README.md
+
+dockers:
+  # https://goreleaser.com/customization/docker/
+  - use: buildx
+    dockerfile: Dockerfile
+    goos: linux
+    goarch: amd64
+    image_templates:
+    - "tagesspiegel/passbolt-operator:{{.Tag}}-amd64"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-amd64{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-amd64{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-amd64{{ end }}"
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.label-schema.schema-version=1.0
+      - --label=org.label-schema.version={{ .Version }}
+      - --label=org.label-schema.name={{ .ProjectName }}
+      - --label=org.label-schema.build-date={{ .Date }}
+      - --label=org.label-schema.description='The passbolt-operator is a Kubernetes operator for syncing Passbolt secrets with Kubernetes secrets.'
+      - --label=org.label-schema.vendor=Helm
+
+  - use: buildx
+    dockerfile: Dockerfile
+    goos: linux
+    goarch: arm64
+    image_templates:
+    - "tagesspiegel/passbolt-operator:{{.Tag}}-arm64"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-arm64{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-arm64{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-arm64{{ end }}"
+    build_flag_templates:
+      - --platform=linux/arm64
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.label-schema.schema-version=1.0
+      - --label=org.label-schema.version={{ .Version }}
+      - --label=org.label-schema.name={{ .ProjectName }}
+      - --label=org.label-schema.build-date={{ .Date }}
+      - --label=org.label-schema.description='The passbolt-operator is a Kubernetes operator for syncing Passbolt secrets with Kubernetes secrets.'
+      - --label=org.label-schema.vendor=Helm
+
+  - use: buildx
+    dockerfile: Dockerfile
+    goos: linux
+    goarch: s390x
+    image_templates:
+    - "tagesspiegel/passbolt-operator:{{.Tag}}-s390x"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-s390x{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-s390x{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-s390x{{ end }}"
+    build_flag_templates:
+      - --platform=linux/s390x
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.label-schema.schema-version=1.0
+      - --label=org.label-schema.version={{ .Version }}
+      - --label=org.label-schema.name={{ .ProjectName }}
+      - --label=org.label-schema.build-date={{ .Date }}
+      - --label=org.label-schema.description='The passbolt-operator is a Kubernetes operator for syncing Passbolt secrets with Kubernetes secrets.'
+      - --label=org.label-schema.vendor=Helm
+
+  - use: buildx
+    dockerfile: Dockerfile
+    goos: linux
+    goarch: ppc64le
+    image_templates:
+    - "tagesspiegel/passbolt-operator:{{.Tag}}-ppc64le"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}-ppc64le{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-ppc64le{{ end }}"
+    - "{{ if not .Prerelease }}tagesspiegel/passbolt-operator:latest-ppc64le{{ end }}"
+    build_flag_templates:
+      - --platform=linux/ppc64le
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.label-schema.schema-version=1.0
+      - --label=org.label-schema.version={{ .Version }}
+      - --label=org.label-schema.name={{ .ProjectName }}
+      - --label=org.label-schema.build-date={{ .Date }}
+      - --label=org.label-schema.description='The passbolt-operator is a Kubernetes operator for syncing Passbolt secrets with Kubernetes secrets.'
+      - --label=org.label-schema.vendor=Helm
+
+docker_manifests:
+  # https://goreleaser.com/customization/docker_manifest/
+  - name_template: tagesspiegel/passbolt-operator:{{.Tag}}
+    skip_push: false
+    image_templates:
+      - tagesspiegel/passbolt-operator:{{.Tag}}-amd64
+      - tagesspiegel/passbolt-operator:{{.Tag}}-arm64
+      - tagesspiegel/passbolt-operator:{{.Tag}}-s390x
+      - tagesspiegel/passbolt-operator:{{.Tag}}-ppc64le
+
+  - name_template: tagesspiegel/passbolt-operator:v{{ .Major }}
+    skip_push: auto
+    image_templates:
+      - tagesspiegel/passbolt-operator:v{{ .Major }}-amd64
+      - tagesspiegel/passbolt-operator:v{{ .Major }}-arm64
+      - tagesspiegel/passbolt-operator:v{{ .Major }}-s390x
+      - tagesspiegel/passbolt-operator:v{{ .Major }}-ppc64le
+
+  - name_template: tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}
+    skip_push: auto
+    image_templates:
+      - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-amd64
+      - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-arm64
+      - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-s390x
+      - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}-ppc64le
+
+  - name_template: tagesspiegel/passbolt-operator:latest
+    skip_push: auto
+    image_templates:
+      - tagesspiegel/passbolt-operator:latest-amd64
+      - tagesspiegel/passbolt-operator:latest-arm64
+      - tagesspiegel/passbolt-operator:latest-s390x
+      - tagesspiegel/passbolt-operator:latest-ppc64le
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-snapshot"
+
+release:
+  draft: false
+  discussion_category_name: General
+  prerelease: auto
+  mode: append
+  header: |
+    ## Release {{ .Version }} [{{ .Date }}]
+  footer: |
+    ## Docker Images
+
+    - tagesspiegel/passbolt-operator:{{.Tag}}
+    {{- if not .Prerelease }}
+    - tagesspiegel/passbolt-operator:v{{ .Major }}
+    - tagesspiegel/passbolt-operator:v{{ .Major }}.{{ .Minor }}
+    - tagesspiegel/passbolt-operator:latest
+    {{- end }}
+
+  extra_files:
+    - glob: LICENSE
+    - glob: README.md
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: "Enhancements"
+      regexp: "^.*enhancement[(\\w)]*:+.*$"
+      order: 2
+    - title: "Documentation changes"
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 3
+    - title: "Code refactoring"
+      regexp: "^.*refactor[(\\w)]*:+.*$"
+      order: 4
+    - title: Dependency updates
+      regexp: "^build[(deps)]: bump +.*$"
+      order: 998
+    - title: Others
+      order: 999
+  filters:
+    exclude:
+      - "^test:"
+      - "^github:"
+      - "^ci:"
+      - "^cd:"
+      - "^ci/cd:"
+      - "^example:"
+      - "^gomod:"
+      - "^git:"
+      - "^goreleaser:"
+      - "^Merge branch"
+      - "WIP"
+
+# The lines beneath this are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
