@@ -158,7 +158,7 @@ func main() {
 					return nil
 				})
 				if err != nil {
-					cacheLog.Error(err, "unable to update in-memory secret name <--> id cache")
+					cacheLog.Error(err, "failed to refresh in-memory cache")
 					os.Exit(1)
 					// return is not needed here, because we exit the program, but we keep it for consistency
 					return
