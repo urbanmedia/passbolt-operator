@@ -72,7 +72,7 @@ coverhtml: ## Display test coverage in html
 
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests.
-	kubectl apply -f config/samples/
+	kubectl apply -k config/samples/
 	sleep ${E2E_APPLY_WAIT_DURATION}
 	./e2e/run.sh
 
