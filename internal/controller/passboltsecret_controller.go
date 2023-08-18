@@ -65,7 +65,8 @@ var (
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logr := log.FromContext(ctx)
-	logr.Info("reconciling PassboltSecret", "name", req.NamespacedName)
+	logr.Info("starting reconciliation...", "name", req.NamespacedName)
+	defer logr.Info("finished reconciliation", "name", req.NamespacedName)
 
 	// get passbolt secret resource from Kubernetes
 	secret := &passboltv1alpha2.PassboltSecret{}
@@ -132,8 +133,6 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// the secret was synced successfully but the status could not be updated
 		return reconcile.Result{}, err
 	}
-
-	logr.Info("reconcile complete", "name", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 
