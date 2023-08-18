@@ -119,9 +119,10 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return errResult, err
 	}
 
-	if opRslt == controllerutil.OperationResultNone {
+	// if the secret was not changed and the status is already success, we can skip the update
+	if opRslt == controllerutil.OperationResultNone && secret.Status.SyncStatus == passboltv1alpha2.SyncStatusSuccess {
 		// secret was not changed
-		logr.V(10).Info("secret unchanged")
+		logr.V(10).Info("secret was not changed! skipping... ")
 		return ctrl.Result{}, nil
 	}
 
