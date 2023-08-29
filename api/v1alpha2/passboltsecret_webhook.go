@@ -1,5 +1,5 @@
 /*
-Copyright 2022 @ Verlag Der Tagesspiegel GmbH
+Copyright 2023 Verlag der Tagesspiegel GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,13 +25,23 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+var (
+	ErrInvalidSecretType              = errors.New("invalid secret type")
+	ErrPassboltSecretNameIsRequired   = errors.New("passboltSecretName is required for secret type")
+	ErrSecretsAreNotAllowed           = errors.New("secrets are not allowed")
+	ErrFieldAndValueAreNotAllowed     = errors.New("field and value are not allowed")
+	ErrFieldOrValueIsRequired         = errors.New("field or value is required")
+	ErrSecretsAreRequired             = errors.New("secrets are required")
+	ErrPassboltSecretNameIsNotAllowed = errors.New("passboltSecretName is not allowed")
 )
 
 // log is for logging in this package.
 var passboltsecretlog = logf.Log.WithName("passboltsecret-resource")
 
 func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	passboltsecretlog.V(10).Info("setting up webhook", "version", "v1alpha2")
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -39,7 +49,6 @@ func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-passbolt-tagesspiegel-de-v1alpha2-passboltsecret,mutating=true,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1alpha2,name=mpassboltsecret.kb.io,admissionReviewVersions=v1
 
-// check if we have implemented the defaulter interface
 var _ webhook.Defaulter = &PassboltSecret{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
@@ -52,17 +61,6 @@ func (r *PassboltSecret) Default() {
 
 //+kubebuilder:webhook:path=/validate-passbolt-tagesspiegel-de-v1alpha2-passboltsecret,mutating=false,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1alpha2,name=vpassboltsecret.kb.io,admissionReviewVersions=v1
 
-var (
-	ErrInvalidSecretType              = errors.New("invalid secret type")
-	ErrPassboltSecretNameIsRequired   = errors.New("passboltSecretName is required for secret type")
-	ErrSecretsAreNotAllowed           = errors.New("secrets are not allowed")
-	ErrFieldAndValueAreNotAllowed     = errors.New("field and value are not allowed")
-	ErrFieldOrValueIsRequired         = errors.New("field or value is required")
-	ErrSecretsAreRequired             = errors.New("secrets are required")
-	ErrPassboltSecretNameIsNotAllowed = errors.New("passboltSecretName is not allowed")
-)
-
-// check if we have implemented the validator interface
 var _ webhook.Validator = &PassboltSecret{}
 
 func (r *PassboltSecret) validatePassboltSecret() error {
@@ -101,19 +99,28 @@ func (r *PassboltSecret) validatePassboltSecret() error {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *PassboltSecret) ValidateCreate() error {
-	passboltsecretlog.V(50).Info("validate create", "name", r.Name)
-	return r.validatePassboltSecret()
+func (r *PassboltSecret) ValidateCreate() (admission.Warnings, error) {
+	passboltsecretlog.Info("validate create", "name", r.Name)
+	if err := r.validatePassboltSecret(); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *PassboltSecret) ValidateUpdate(old runtime.Object) error {
-	passboltsecretlog.V(50).Info("validate update", "name", r.Name)
-	return r.validatePassboltSecret()
+func (r *PassboltSecret) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+	passboltsecretlog.Info("validate update", "name", r.Name)
+	if err := r.validatePassboltSecret(); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *PassboltSecret) ValidateDelete() error {
-	passboltsecretlog.V(50).Info("validate delete", "name", r.Name)
-	return r.validatePassboltSecret()
+func (r *PassboltSecret) ValidateDelete() (admission.Warnings, error) {
+	passboltsecretlog.Info("validate delete", "name", r.Name)
+	if err := r.validatePassboltSecret(); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }

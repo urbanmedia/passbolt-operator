@@ -1,5 +1,5 @@
 /*
-Copyright 2022 @ Verlag Der Tagesspiegel GmbH
+Copyright 2023 Verlag der Tagesspiegel GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,24 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controller
 
 import (
 	"context"
 	"fmt"
+	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	"github.com/urbanmedia/passbolt-operator/pkg/util"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PassboltSecretReconciler reconciles a PassboltSecret object
@@ -40,6 +41,13 @@ type PassboltSecretReconciler struct {
 	Scheme         *runtime.Scheme
 	PassboltClient *passbolt.Client
 }
+
+var (
+	errResult = ctrl.Result{
+		Requeue:      true,
+		RequeueAfter: 30 * time.Second,
+	}
+)
 
 //+kubebuilder:rbac:groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=passbolt.tagesspiegel.de,resources=passboltsecrets/status,verbs=get;update;patch
@@ -54,33 +62,23 @@ type PassboltSecretReconciler struct {
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logr := log.FromContext(ctx)
-
-	logr.Info("reconciling PassboltSecret", "name", req.NamespacedName)
+	logr.Info("starting reconciliation...", "name", req.NamespacedName)
+	defer logr.Info("finished reconciliation", "name", req.NamespacedName)
 
 	// get passbolt secret resource from Kubernetes
 	secret := &passboltv1alpha2.PassboltSecret{}
 	err := r.Client.Get(ctx, req.NamespacedName, secret)
 	if err != nil {
 		if err = client.IgnoreNotFound(err); err != nil {
-			return ctrl.Result{}, err
+			return errResult, err
 		}
-		return ctrl.Result{}, nil
+		return errResult, err
 	}
 	// cleanup status
 	secret.Status.SyncErrors = []passboltv1alpha2.SyncError{}
-
-	// create status update function
-	updateStatus := func(ctx context.Context, passboltSecret *passboltv1alpha2.PassboltSecret) error {
-		err := r.Client.Status().Update(ctx, passboltSecret)
-		if err != nil {
-			logr.Error(err, "unable to update PassboltSecret status")
-			return err
-		}
-		return nil
-	}
 
 	// make sure that the secret type is supported
 	if secret.Spec.SecretType != corev1.SecretTypeOpaque && secret.Spec.SecretType != corev1.SecretTypeDockerConfigJson {
@@ -90,11 +88,10 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			Message: fmt.Sprintf("unsupported secret type %q", secret.Spec.SecretType),
 			Time:    metav1.Now(),
 		})
-		if err := updateStatus(ctx, secret); err != nil {
-			logr.Error(err, "unable to update status")
-			return ctrl.Result{}, err
+		if err := r.Client.Status().Update(ctx, secret); err != nil {
+			return errResult, err
 		}
-		return ctrl.Result{}, nil
+		return errResult, nil
 	}
 
 	// define Kubernetes secret to be created or updated
@@ -106,6 +103,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			Annotations: secret.Annotations,
 		},
 		Type: secret.Spec.SecretType,
+		Data: map[string][]byte{},
 	}
 
 	opRslt, err := controllerutil.CreateOrUpdate(ctx, r.Client, k8sSecret, util.UpdateSecret(ctx, r.PassboltClient, r.Scheme, secret, k8sSecret))
@@ -113,19 +111,18 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if snErr, ok := err.(passboltv1alpha2.SyncError); ok {
 			secret.Status.SyncStatus = passboltv1alpha2.SyncStatusError
 			secret.Status.SyncErrors = append(secret.Status.SyncErrors, snErr)
-			if err := updateStatus(ctx, secret); err != nil {
-				logr.Error(err, "unable to update status")
-				return ctrl.Result{}, err
+			if err := r.Client.Status().Update(ctx, secret); err != nil {
+				return errResult, err
 			}
-			return ctrl.Result{}, nil
+			return errResult, err
 		}
-		logr.Error(err, "unable to create or update secret")
-		return ctrl.Result{}, err
+		return errResult, err
 	}
 
-	if opRslt == controllerutil.OperationResultNone {
+	// if the secret was not changed and the status is already success, we can skip the update
+	if opRslt == controllerutil.OperationResultNone && secret.Status.SyncStatus == passboltv1alpha2.SyncStatusSuccess {
 		// secret was not changed
-		logr.V(10).Info("secret unchanged")
+		logr.V(10).Info("secret was not changed! skipping... ")
 		return ctrl.Result{}, nil
 	}
 
@@ -134,13 +131,9 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	secret.Status.LastSync = metav1.Now()
 	err = r.Client.Status().Update(ctx, secret)
 	if err != nil {
-		logr.Error(err, "unable to update PassboltSecret status")
-		// we don't return an error here, as the secret was successfully synced
-		return ctrl.Result{}, nil
+		// the secret was synced successfully but the status could not be updated
+		return reconcile.Result{}, err
 	}
-
-	logr.Info("reconcile complete", "name", req.NamespacedName)
-
 	return ctrl.Result{}, nil
 }
 

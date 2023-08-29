@@ -1,5 +1,5 @@
 /*
-Copyright 2022 @ Verlag Der Tagesspiegel GmbH
+Copyright 2023 Verlag der Tagesspiegel GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controller
 
 import (
 	"context"
@@ -27,21 +27,16 @@ import (
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
-	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
-
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	//+kubebuilder:scaffold:imports
-	corev1 "k8s.io/api/core/v1"
-
-	_ "embed"
 )
 
 var (
@@ -144,14 +139,16 @@ hsyXBbUvHYeSbmxi1mixsT7ry3UDZkqvnr0I0CDsIt33L/LbJ15pxKJJgBgf
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
-var passboltClient *passbolt.Client
-var ctx context.Context
-var cancel context.CancelFunc
+var (
+	cfg            *rest.Config
+	k8sClient      client.Client
+	testEnv        *envtest.Environment
+	passboltClient *passbolt.Client
+	ctx            context.Context
+	cancel         context.CancelFunc
+)
 
-func TestAPIs(t *testing.T) {
+func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecs(t, "Controller Suite")
@@ -160,26 +157,22 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	ctx, cancel = context.WithCancel(context.TODO())
-
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:       []string{filepath.Join("..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing:   true,
-		ControlPlaneStopTimeout: 10 * time.Second,
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: true,
 	}
 
 	var err error
 
 	// initialize passbolt client
+	ctx, cancel = context.WithCancel(context.TODO())
 	clnt, err := passbolt.NewClient(ctx, passboltURL, passboltGPGKey, passboltPassword)
 	Expect(err).NotTo(HaveOccurred())
 	passboltClient = clnt
-
 	// define timeout context for loading cache
 	ctx2, cf := context.WithTimeout(ctx, 10*time.Second)
 	defer cf()
-
 	// fill cache
 	err = passboltClient.LoadCache(ctx2)
 	Expect(err).NotTo(HaveOccurred())
@@ -189,19 +182,12 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	// add corev1 scheme
-	//err = corev1.AddToScheme(scheme.Scheme)
-	//Expect(err).NotTo(HaveOccurred())
-
-	// add passbolt operator scheme
 	err = passboltv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = passboltv1alpha2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = corev1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})

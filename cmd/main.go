@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2023 Verlag der Tagesspiegel GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,18 +35,15 @@ import (
 
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
-	"github.com/urbanmedia/passbolt-operator/controllers"
+	"github.com/urbanmedia/passbolt-operator/internal/controller"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
+	"github.com/urbanmedia/passbolt-operator/pkg/util"
 	//+kubebuilder:scaffold:imports
 )
 
 const (
-	// loadCacheErrorRetryCounterReLogin defines how often we retry to re-login after a failed login attempt
-	// must always be less than loadCacheErrorRetryCounterExit
-	loadCacheErrorRetryCounterReLogin = 2
-	// loadCacheErrorRetryCounterExit defines how often we retry to re-login after which we exit the program
-	// must always be greater than loadCacheErrorRetryCounterReLogin
-	loadCacheErrorRetryCounterExit = 3
+	// cacheLoadRetries defines how often we retry to load the cache
+	cacheLoadRetries = 3
 )
 
 var (
@@ -131,44 +128,46 @@ func main() {
 		done <- true
 	}()
 	go func() {
-		// define an error counter to prevent the operator from running in a broken state
-		errorCounter := 0
 		for {
 			select {
 			case <-done:
 				// we exit here, because the ticker is stopped
 				return
+			// refresh cache every X ticks
 			case <-ticker.C:
-				cacheLog.Info("loading passbolt cache")
+				cacheLog.Info("refeshing passbolt cache")
 				ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cf()
-				err := clnt.LoadCache(ctx)
-				if err != nil {
-					cacheLog.Error(err, "unable to update local passbolt cache", "errorCounter", errorCounter)
-					if errorCounter > loadCacheErrorRetryCounterReLogin {
-						if errorCounter >= loadCacheErrorRetryCounterExit {
-							// we exit here, because we failed to load the cache 3 times in a row
-							// this is to prevent the operator from running in a broken state
-							os.Exit(1)
-						}
-						// try to re-login to passbolt
-						err := clnt.ReLogin(ctx)
-						if err != nil {
-							cacheLog.Error(err, "unable to re-login to passbolt")
-							// we tried to re-login, but failed
-							os.Exit(1)
+
+				lastErr := false
+				err := util.Retry(ctx, cacheLoadRetries, 10, func(ctx context.Context) error {
+					if lastErr {
+						cacheLog.Info("retrying to authenticate to passbolt")
+						// we already failed once, so we try to re-login
+						if err := clnt.ReLogin(ctx); err != nil {
+							return err
 						}
 					}
-					errorCounter++
-					// we don't exit here, because we want to continue with the next tick
-					continue
+					cacheLog.Info("querying secrets from passbolt...")
+					err := clnt.LoadCache(ctx)
+					if err != nil {
+						lastErr = true
+						return err
+					}
+					lastErr = false
+					return nil
+				})
+				if err != nil {
+					cacheLog.Error(err, "failed to refresh in-memory cache")
+					os.Exit(1)
+					// return is not needed here, because we exit the program, but we keep it for consistency
+					return
 				}
-				errorCounter = 0
 			}
 		}
 	}()
 
-	if err = (&controllers.PassboltSecretReconciler{
+	if err = (&controller.PassboltSecretReconciler{
 		Client:         mgr.GetClient(),
 		Scheme:         mgr.GetScheme(),
 		PassboltClient: clnt,

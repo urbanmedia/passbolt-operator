@@ -684,7 +684,7 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 				Spec:       tt.fields.Spec,
 				Status:     tt.fields.Status,
 			}
-			if err := r.ValidateCreate(); (err != nil) != tt.wantErr {
+			if _, err := r.ValidateCreate(); (err != nil) != tt.wantErr {
 				t.Errorf("PassboltSecret.ValidateCreate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -932,7 +932,7 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 				Spec:       tt.fields.Spec,
 				Status:     tt.fields.Status,
 			}
-			if err := r.ValidateUpdate(tt.args.old); (err != nil) != tt.wantErr {
+			if _, err := r.ValidateUpdate(tt.args.old); (err != nil) != tt.wantErr {
 				t.Errorf("PassboltSecret.ValidateUpdate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -1176,7 +1176,7 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 				Spec:       tt.fields.Spec,
 				Status:     tt.fields.Status,
 			}
-			if err := r.ValidateDelete(); (err != nil) != tt.wantErr {
+			if _, err := r.ValidateDelete(); (err != nil) != tt.wantErr {
 				t.Errorf("PassboltSecret.ValidateDelete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

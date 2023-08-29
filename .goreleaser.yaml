@@ -11,7 +11,7 @@ before:
 
 builds:
   - id: controller
-    main: main.go
+    main: cmd/main.go
     binary: controller
     env:
       - CGO_ENABLED=0

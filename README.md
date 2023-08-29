@@ -119,6 +119,8 @@ The Passbolt Operator can be configured with the following environement variable
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/) >= v1.25
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/) >= v0.17
 - mysql-client >= 15.1 (`mysql --version` => `mysql  Ver 15.1 Distrib 10.6.11-MariaDB`)
+  - [Prometheus Operator CRDs installed in the cluster](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-operator-crds) >= 5.1
+  - [cert-manager](https://cert-manager.io/docs/installation/helm/) >= v1.12
 
 ### Setup the development environment
 

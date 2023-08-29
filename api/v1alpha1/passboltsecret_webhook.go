@@ -1,5 +1,5 @@
 /*
-Copyright 2022 @ Verlag Der Tagesspiegel GmbH
+Copyright 2023 Verlag der Tagesspiegel GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import (
 var passboltsecretlog = logf.Log.WithName("passboltsecret-resource")
 
 func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	passboltsecretlog.V(10).Info("setting up webhook", "version", "v1alpha1")
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()

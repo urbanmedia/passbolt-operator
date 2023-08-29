@@ -16,13 +16,12 @@ on:
       - hack/
       - Makefile
       - PROJECT
-      - charts/**
   pull_request:
     branches:
       - "!dependabot/**"
 
 env:
-  go_version: 1.19
+  go_version: '1.20'
   artifact_name: passbolt-operator
   artifact_bin_name: kubebuilder
   IMG: tagesspiegel/passbolt-operator:dev
@@ -214,17 +213,15 @@ jobs:
       - build-temp-image
       - prepare-bin
     env:
-      KUBERNETES_NAMESPACE: kubernetes-passbolt-operator-system
+      KUBERNETES_NAMESPACE: passbolt-operator-system
     strategy:
       fail-fast: false
       matrix:
         kind_node_image:
-          - kindest/node:v1.26.0
-          - kindest/node:v1.25.3
-          - kindest/node:v1.24.7
-          - kindest/node:v1.23.13
-          - kindest/node:v1.22.15
-          - kindest/node:v1.21.14
+          - kindest/node:v1.27.3
+          - kindest/node:v1.26.6
+          - kindest/node:v1.25.11
+          - kindest/node:v1.24.15
     steps:
       - name: Install go ${{ env.go_version }}
         uses: actions/setup-go@v4
@@ -293,6 +290,12 @@ jobs:
 
       - name: Start the other containers
         run: docker-compose up -d
+
+      - name: Install Prometheus Operator CRDs
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm install prometheus-operator-crds prometheus-community/prometheus-operator-crds
 
       - name: Install cert-manager
         run: |
