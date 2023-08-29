@@ -36,6 +36,7 @@ import (
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/internal/controller"
+	"github.com/urbanmedia/passbolt-operator/pkg/cache"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	"github.com/urbanmedia/passbolt-operator/pkg/util"
 	//+kubebuilder:scaffold:imports
@@ -50,6 +51,8 @@ var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 	cacheLog = ctrl.Log.WithName("cache")
+
+	sysCache cache.Cacher = cache.NewInMemoryCache()
 )
 
 func init() {
@@ -106,7 +109,7 @@ func main() {
 	defer cf()
 
 	// create passbolt client
-	clnt, err := passbolt.NewClient(ctx, os.Getenv("PASSBOLT_URL"), os.Getenv("PASSBOLT_GPG"), os.Getenv("PASSBOLT_PASSWORD"))
+	clnt, err := passbolt.NewClient(ctx, sysCache, os.Getenv("PASSBOLT_URL"), os.Getenv("PASSBOLT_GPG"), os.Getenv("PASSBOLT_PASSWORD"))
 	if err != nil {
 		setupLog.Error(err, "unable to create passbolt client")
 		os.Exit(1)

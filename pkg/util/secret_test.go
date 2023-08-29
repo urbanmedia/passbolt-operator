@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	"github.com/urbanmedia/passbolt-operator/pkg/cache"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -116,7 +117,7 @@ var (
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
-	clnt, err := passbolt.NewClient(ctx, passboltURL, passboltUsername, passboltPassword)
+	clnt, err := passbolt.NewClient(ctx, cache.NewInMemoryCache(), passboltURL, passboltUsername, passboltPassword)
 	if err != nil {
 		log.Fatal(err)
 	}

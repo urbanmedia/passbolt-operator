@@ -35,6 +35,7 @@ import (
 
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	"github.com/urbanmedia/passbolt-operator/pkg/cache"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	//+kubebuilder:scaffold:imports
 )
@@ -167,7 +168,7 @@ var _ = BeforeSuite(func() {
 
 	// initialize passbolt client
 	ctx, cancel = context.WithCancel(context.TODO())
-	clnt, err := passbolt.NewClient(ctx, passboltURL, passboltGPGKey, passboltPassword)
+	clnt, err := passbolt.NewClient(ctx, cache.NewInMemoryCache(), passboltURL, passboltGPGKey, passboltPassword)
 	Expect(err).NotTo(HaveOccurred())
 	passboltClient = clnt
 	// define timeout context for loading cache

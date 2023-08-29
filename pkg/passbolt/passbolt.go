@@ -26,6 +26,7 @@ import (
 	"github.com/passbolt/go-passbolt/helper"
 	"github.com/prometheus/client_golang/prometheus"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	"github.com/urbanmedia/passbolt-operator/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -112,16 +113,16 @@ func (p PassboltSecretDefinition) FieldValue(fieldName passboltv1alpha2.FieldNam
 type Client struct {
 	// passboltClient is the underlying passbolt client.
 	passboltClient *api.Client
-	// mu is used to prevent concurrent access to the secret cache.
-	mu sync.RWMutex
-	// secretCache represents a cache of NAME -> UUID mappings.
-	// This is used to avoid unnecessary API calls.
-	secretCache map[string]string
+
+	// prevent concurrent access to the cache
+	cacheMutext sync.Mutex
+	// cache is the secret cache.
+	cache cache.Cacher
 }
 
 // NewClient initializes a new passbolt client and logs in.
 // The client is configured to use the given URL, username and password.
-func NewClient(ctx context.Context, url, username, password string) (*Client, error) {
+func NewClient(ctx context.Context, cache cache.Cacher, url, username, password string) (*Client, error) {
 	clnt, err := api.NewClient(&http.Client{}, "", url, username, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create passbolt client: %w", err)
@@ -132,8 +133,7 @@ func NewClient(ctx context.Context, url, username, password string) (*Client, er
 	}
 	return &Client{
 		passboltClient: clnt,
-		secretCache:    map[string]string{},
-		mu:             sync.RWMutex{},
+		cache:          cache,
 	}, nil
 }
 
@@ -143,10 +143,9 @@ func NewClient(ctx context.Context, url, username, password string) (*Client, er
 // Instead, we must retrieve all secrets and their UUIDs.
 // This is not ideal, but it is the only way to retrieve secrets by name.
 func (c *Client) LoadCache(ctx context.Context) error {
+	// increase cache sync metric
 	passboltCacheSync.Inc()
-	// prevent concurrent access to the cache
-	c.mu.Lock()
-	defer c.mu.Unlock()
+
 	// retrieve all secrets
 	resources, err := c.passboltClient.GetResources(ctx, &api.GetResourcesOptions{})
 	if err != nil {
@@ -155,7 +154,7 @@ func (c *Client) LoadCache(ctx context.Context) error {
 	}
 	// fill the cache
 	for _, sctr := range resources {
-		c.secretCache[sctr.Name] = sctr.ID
+		c.cache.Set(ctx, sctr.Name, sctr.ID, 0)
 	}
 	return nil
 }
@@ -163,8 +162,6 @@ func (c *Client) LoadCache(ctx context.Context) error {
 // Close logs out of the passbolt client.
 // This should be called when the client is no longer needed.
 func (c *Client) Close(ctx context.Context) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	return c.passboltClient.Logout(ctx)
 }
 
@@ -174,16 +171,14 @@ func (c *Client) Close(ctx context.Context) error {
 // If the secret is in the cache, the secret is retrieved from passbolt.
 func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDefinition, error) {
 	passboltSecretGetAttemptsTotal.Inc()
-	// prevent concurrent access to the cache
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	// check if the secret is in the cache
-	if _, ok := c.secretCache[name]; !ok {
+	// retrieve the secret ID from the cache
+	val, err := c.cache.Get(ctx, name)
+	if err != nil {
 		passboltSecretGetFailureAttemptsTotal.Inc()
-		return nil, fmt.Errorf("unable to find secret in cache with name %q", name)
+		return nil, err
 	}
 	// retrieve the secret
-	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, c.secretCache[name])
+	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, val.(string))
 	if err != nil {
 		passboltSecretGetFailureAttemptsTotal.Inc()
 		return nil, fmt.Errorf("failed to get secret with name %q: %w", name, err)
