@@ -16,7 +16,6 @@ on:
       - hack/
       - Makefile
       - PROJECT
-      - charts/**
   pull_request:
     branches:
       - "!dependabot/**"
