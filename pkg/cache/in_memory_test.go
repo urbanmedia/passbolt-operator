@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func TestNewInMemoryCache(t *testing.T) {
@@ -14,12 +16,12 @@ func TestNewInMemoryCache(t *testing.T) {
 	}{
 		{
 			name: "TestNewInMemoryCache",
-			want: NewInMemoryCache(),
+			want: NewInMemoryCache(ctrl.Log),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewInMemoryCache(); !reflect.DeepEqual(got, tt.want) {
+			if got := NewInMemoryCache(ctrl.Log); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewInMemoryCache() = %v, want %v", got, tt.want)
 			}
 		})
