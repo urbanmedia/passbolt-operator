@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
@@ -117,7 +118,7 @@ var (
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
-	clnt, err := passbolt.NewClient(ctx, cache.NewInMemoryCache(), passboltURL, passboltUsername, passboltPassword)
+	clnt, err := passbolt.NewClient(ctx, cache.NewInMemoryCache(ctrl.Log), passboltURL, passboltUsername, passboltPassword)
 	if err != nil {
 		log.Fatal(err)
 	}

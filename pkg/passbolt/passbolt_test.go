@@ -22,6 +22,8 @@ import (
 
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/pkg/cache"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
@@ -268,7 +270,7 @@ func TestNewClient(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewClient(tt.args.ctx, cache.NewInMemoryCache(), tt.args.url, tt.args.username, tt.args.password)
+			got, err := NewClient(tt.args.ctx, cache.NewInMemoryCache(ctrl.Log), tt.args.url, tt.args.username, tt.args.password)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -305,7 +307,7 @@ func TestClient_LoadCache(t *testing.T) {
 				client: func() *Client {
 					clnt, err := NewClient(
 						context.Background(),
-						cache.NewInMemoryCache(),
+						cache.NewInMemoryCache(ctrl.Log),
 						passboltURL,
 						passboltUsername,
 						passboltPassword)
@@ -352,7 +354,7 @@ func TestClient_Close(t *testing.T) {
 				client: func() *Client {
 					clnt, err := NewClient(
 						context.Background(),
-						cache.NewInMemoryCache(),
+						cache.NewInMemoryCache(ctrl.Log),
 						passboltURL,
 						passboltUsername,
 						passboltPassword)
@@ -401,7 +403,7 @@ func TestClient_GetSecret(t *testing.T) {
 				client: func() *Client {
 					clnt, err := NewClient(
 						context.Background(),
-						cache.NewInMemoryCache(),
+						cache.NewInMemoryCache(ctrl.Log),
 						passboltURL,
 						passboltUsername,
 						passboltPassword)
@@ -430,7 +432,7 @@ func TestClient_GetSecret(t *testing.T) {
 				client: func() *Client {
 					clnt, err := NewClient(
 						context.Background(),
-						cache.NewInMemoryCache(),
+						cache.NewInMemoryCache(ctrl.Log),
 						passboltURL,
 						passboltUsername,
 						passboltPassword)
@@ -492,7 +494,7 @@ func TestClient_ReLogin(t *testing.T) {
 				client: func() *Client {
 					clnt, err := NewClient(
 						context.Background(),
-						cache.NewInMemoryCache(),
+						cache.NewInMemoryCache(ctrl.Log),
 						passboltURL,
 						passboltUsername,
 						passboltPassword,

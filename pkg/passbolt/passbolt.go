@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/passbolt/go-passbolt/api"
 	"github.com/passbolt/go-passbolt/helper"
@@ -114,8 +113,6 @@ type Client struct {
 	// passboltClient is the underlying passbolt client.
 	passboltClient *api.Client
 
-	// prevent concurrent access to the cache
-	cacheMutext sync.Mutex
 	// cache is the secret cache.
 	cache cache.Cacher
 }
@@ -171,12 +168,19 @@ func (c *Client) Close(ctx context.Context) error {
 // If the secret is in the cache, the secret is retrieved from passbolt.
 func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDefinition, error) {
 	passboltSecretGetAttemptsTotal.Inc()
+
 	// retrieve the secret ID from the cache
 	val, err := c.cache.Get(ctx, name)
 	if err != nil {
 		passboltSecretGetFailureAttemptsTotal.Inc()
 		return nil, err
 	}
+
+	if val == nil {
+		passboltSecretGetFailureAttemptsTotal.Inc()
+		return nil, fmt.Errorf("secret with name %q not found in cache", name)
+	}
+
 	// retrieve the secret
 	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, val.(string))
 	if err != nil {
