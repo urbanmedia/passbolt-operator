@@ -52,6 +52,13 @@ services:
       - 8088:8080
       - 4433:4433
 
+  redis:
+    image: redis:7.2.0-alpine
+    restart: always
+    container_name: redis
+    ports:
+      - 31311:6379
+
 networks:
   passbolt:
     driver: bridge
