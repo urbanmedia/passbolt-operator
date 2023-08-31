@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/redis/go-redis/v9"
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	"github.com/urbanmedia/passbolt-operator/internal/controller"
@@ -52,7 +54,14 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 	cacheLog = ctrl.Log.WithName("cache")
 
-	sysCache cache.Cacher = cache.NewInMemoryCache()
+	// redis config
+	redisHost     = util.StringEnvOrDefault("REDIS_HOST", "")
+	redisPort     = util.IntEnvOrDefault("REDIS_PORT", 6379)
+	redisPassword = util.StringEnvOrDefault("REDIS_PASSWORD", "")
+	redisUsername = util.StringEnvOrDefault("REDIS_USERNAME", "")
+	redisDB       = util.IntEnvOrDefault("REDIS_DB", 0)
+
+	sysCache cache.Cacher
 )
 
 func init() {
@@ -61,6 +70,24 @@ func init() {
 	utilruntime.Must(passboltv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(passboltv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
+
+	// check if redis host is set
+	if redisHost != "" {
+		rdc := &redis.Options{
+			Addr: fmt.Sprintf("%s:%d", redisHost, redisPort),
+		}
+		// set redis password and username if redisPassword is set
+		if redisPassword != "" {
+			rdc.Password = redisPassword
+			rdc.Username = redisUsername
+		}
+		rdc.DB = redisDB
+		// create redis client
+		sysCache = cache.NewRedisCache(cacheLog, rdc)
+	} else {
+		// create in-memory cache
+		sysCache = cache.NewInMemoryCache(cacheLog)
+	}
 }
 
 func main() {
@@ -169,6 +196,34 @@ func main() {
 			}
 		}
 	}()
+
+	// check redis connections
+	ticketRedis := time.NewTicker(5 * time.Minute)
+	defer ticketRedis.Stop()
+	if r, ok := sysCache.(*cache.Redis); ok {
+		go func() {
+			for {
+				select {
+				case <-done:
+					// we exit here, because the ticker is stopped
+					return
+				// refresh cache every X ticks
+				case <-ticketRedis.C:
+					cacheLog.Info("checking redis connection")
+					ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
+					defer cf()
+
+					err := r.Ping(ctx)
+					if err != nil {
+						cacheLog.Error(err, "failed to ping redis")
+						os.Exit(1)
+						// return is not needed here, because we exit the program, but we keep it for consistency
+						return
+					}
+				}
+			}
+		}()
+	}
 
 	if err = (&controller.PassboltSecretReconciler{
 		Client:         mgr.GetClient(),

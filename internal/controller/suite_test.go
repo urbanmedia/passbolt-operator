@@ -168,7 +168,7 @@ var _ = BeforeSuite(func() {
 
 	// initialize passbolt client
 	ctx, cancel = context.WithCancel(context.TODO())
-	clnt, err := passbolt.NewClient(ctx, cache.NewInMemoryCache(), passboltURL, passboltGPGKey, passboltPassword)
+	clnt, err := passbolt.NewClient(ctx, cache.NewInMemoryCache(ctrl.Log), passboltURL, passboltGPGKey, passboltPassword)
 	Expect(err).NotTo(HaveOccurred())
 	passboltClient = clnt
 	// define timeout context for loading cache
