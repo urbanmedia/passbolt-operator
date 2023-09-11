@@ -156,6 +156,10 @@ generate-manifests: manifests kustomize ## Generate manifests and store them in 
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default --output generated/default/
 
+.PHONY: ci-deploy
+ci-deploy: docker-build docker-save docker-load
+	@bash export PASSBOLT_HOST=$(hostname -I | awk '{print $1}')
+
 ##@ Build Dependencies
 
 ## Location to install dependencies to
