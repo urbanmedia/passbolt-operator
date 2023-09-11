@@ -30,11 +30,11 @@ func TestNewInMemoryCache(t *testing.T) {
 
 func Test_inMemory_Set(t *testing.T) {
 	type fields struct {
-		cacheData map[string]any
+		cacheData map[string][]byte
 	}
 	type args struct {
 		key   string
-		value any
+		value []byte
 		ttl   time.Duration
 	}
 	tests := []struct {
@@ -44,11 +44,13 @@ func Test_inMemory_Set(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:   "Test_inMemory_Set",
-			fields: fields{cacheData: make(map[string]any)},
+			name: "Test_inMemory_Set",
+			fields: fields{
+				cacheData: map[string][]byte{},
+			},
 			args: args{
 				key:   "test",
-				value: "test",
+				value: []byte("test"),
 				ttl:   0,
 			},
 			wantErr: false,
@@ -57,6 +59,7 @@ func Test_inMemory_Set(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &inMemory{
+				logr:      ctrl.Log,
 				cacheData: tt.fields.cacheData,
 			}
 			if err := c.Set(context.TODO(), tt.args.key, tt.args.value, tt.args.ttl); (err != nil) != tt.wantErr {
@@ -68,7 +71,7 @@ func Test_inMemory_Set(t *testing.T) {
 
 func Test_inMemory_Get(t *testing.T) {
 	type fields struct {
-		cacheData map[string]any
+		cacheData map[string][]byte
 	}
 	type args struct {
 		key string
@@ -77,25 +80,29 @@ func Test_inMemory_Get(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    any
+		want    []byte
 		wantErr bool
 	}{
 		{
 			name: "Test_inMemory_Get",
-			fields: fields{cacheData: map[string]any{
-				"test": "test",
-			}},
+			fields: fields{
+				cacheData: map[string][]byte{
+					"test": []byte("test"),
+				},
+			},
 			args: args{
 				key: "test",
 			},
-			want:    "test",
+			want:    []byte("test"),
 			wantErr: false,
 		},
 		{
 			name: "Test_inMemory_Get cache miss",
-			fields: fields{cacheData: map[string]any{
-				"test": "test",
-			}},
+			fields: fields{
+				cacheData: map[string][]byte{
+					"test": []byte("test"),
+				},
+			},
 			args: args{
 				key: "test2",
 			},
@@ -106,8 +113,10 @@ func Test_inMemory_Get(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &inMemory{
+				logr:      ctrl.Log,
 				cacheData: tt.fields.cacheData,
 			}
+
 			got, err := c.Get(context.TODO(), tt.args.key)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("inMemory.Get() error = %v, wantErr %v", err, tt.wantErr)
@@ -122,7 +131,7 @@ func Test_inMemory_Get(t *testing.T) {
 
 func Test_inMemory_Delete(t *testing.T) {
 	type fields struct {
-		cacheData map[string]any
+		cacheData map[string][]byte
 	}
 	type args struct {
 		ctx context.Context
@@ -136,8 +145,8 @@ func Test_inMemory_Delete(t *testing.T) {
 	}{
 		{
 			name: "Test_inMemory_Delete",
-			fields: fields{cacheData: map[string]any{
-				"test": "test",
+			fields: fields{cacheData: map[string][]byte{
+				"test": []byte("test"),
 			}},
 			args: args{
 				ctx: context.TODO(),
@@ -147,8 +156,8 @@ func Test_inMemory_Delete(t *testing.T) {
 		},
 		{
 			name: "Test_inMemory_Delete cache miss",
-			fields: fields{cacheData: map[string]any{
-				"test": "test",
+			fields: fields{cacheData: map[string][]byte{
+				"test": []byte("test"),
 			}},
 			args: args{
 				ctx: context.TODO(),
@@ -160,6 +169,7 @@ func Test_inMemory_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &inMemory{
+				logr:      ctrl.Log,
 				cacheData: tt.fields.cacheData,
 			}
 			if err := c.Delete(tt.args.ctx, tt.args.key); (err != nil) != tt.wantErr {

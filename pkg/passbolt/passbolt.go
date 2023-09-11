@@ -151,7 +151,7 @@ func (c *Client) LoadCache(ctx context.Context) error {
 	}
 	// fill the cache
 	for _, sctr := range resources {
-		c.cache.Set(ctx, sctr.Name, sctr.ID, 0)
+		c.cache.Set(ctx, sctr.Name, []byte(sctr.ID), 0)
 	}
 	return nil
 }
@@ -182,7 +182,7 @@ func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDef
 	}
 
 	// retrieve the secret
-	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, val.(string))
+	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, string(val))
 	if err != nil {
 		passboltSecretGetFailureAttemptsTotal.Inc()
 		return nil, fmt.Errorf("failed to get secret with name %q: %w", name, err)

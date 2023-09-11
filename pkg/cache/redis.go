@@ -40,17 +40,18 @@ func (r *Redis) Close() error {
 	return r.client.Close()
 }
 
-func (r *Redis) Get(ctx context.Context, key string) (any, error) {
+func (r *Redis) Get(ctx context.Context, key string) ([]byte, error) {
 	r.logr.Info("reading key from redis", "key", key)
-	rsp := r.client.Get(ctx, key)
-	if err := rsp.Err(); err != nil {
+	bts, err := r.client.Get(ctx, key).Bytes()
+	if err != nil {
 		return nil, fmt.Errorf("failed to read key %q: %w", key, err)
 	}
-	return rsp.Val(), nil
+	return bts, nil
 }
 
-func (r *Redis) Set(ctx context.Context, key string, val any, ttl time.Duration) error {
+func (r *Redis) Set(ctx context.Context, key string, val []byte, ttl time.Duration) error {
 	r.logr.Info("writing key to redis", "key", key)
+	// write the value to redis
 	err := r.client.Set(ctx, key, val, ttl).Err()
 	if err != nil {
 		return fmt.Errorf("failed to write key %q: %w", key, err)

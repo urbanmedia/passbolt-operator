@@ -9,9 +9,9 @@ import (
 type Cacher interface {
 	// Set sets the value for a key with a TTL.
 	// If the TTL is 0, the key will never expire.
-	Set(ctx context.Context, key string, value any, ttl time.Duration) error
+	Set(ctx context.Context, key string, value []byte, ttl time.Duration) error
 	// Get returns the value for a key.
-	Get(ctx context.Context, key string) (any, error)
+	Get(ctx context.Context, key string) ([]byte, error)
 	// Delete deletes the value for a key.
 	Delete(ctx context.Context, key string) error
 }
