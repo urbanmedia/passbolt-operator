@@ -151,7 +151,11 @@ func (c *Client) LoadCache(ctx context.Context) error {
 	}
 	// fill the cache
 	for _, sctr := range resources {
-		c.cache.Set(ctx, sctr.Name, []byte(sctr.ID), 0)
+		err := c.cache.Set(ctx, sctr.Name, []byte(sctr.ID), 0)
+		if err != nil {
+			passboltCacheFailures.Inc()
+			return fmt.Errorf("failed to set secret %q in cache: %w", sctr.Name, err)
+		}
 	}
 	return nil
 }
