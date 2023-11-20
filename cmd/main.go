@@ -198,8 +198,8 @@ func main() {
 	}()
 
 	// check redis connections
-	ticketRedis := time.NewTicker(5 * time.Minute)
-	defer ticketRedis.Stop()
+	tickerRedis := time.NewTicker(5 * time.Minute)
+	defer tickerRedis.Stop()
 	if r, ok := sysCache.(*cache.Redis); ok {
 		go func() {
 			for {
@@ -208,7 +208,7 @@ func main() {
 					// we exit here, because the ticker is stopped
 					return
 				// refresh cache every X ticks
-				case <-ticketRedis.C:
+				case <-tickerRedis.C:
 					cacheLog.Info("checking redis connection")
 					ctx, cf := context.WithTimeout(context.Background(), 5*time.Second)
 					defer cf()
