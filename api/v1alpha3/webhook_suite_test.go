@@ -1,5 +1,5 @@
 /*
-Copyright 2023 Verlag der Tagesspiegel GmbH.
+Copyright 2022 @ Verlag Der Tagesspiegel GmbH
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha3
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	admissionv1 "k8s.io/api/admission/v1"
+	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	//+kubebuilder:scaffold:imports
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -78,7 +78,7 @@ var _ = BeforeSuite(func() {
 	err = AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = admissionv1.AddToScheme(scheme)
+	err = admissionv1beta1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
@@ -98,6 +98,11 @@ var _ = BeforeSuite(func() {
 		MetricsBindAddress: "0",
 	})
 	Expect(err).NotTo(HaveOccurred())
+
+	err = (&PassboltSecret{}).SetupWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+
+	//+kubebuilder:scaffold:webhook
 
 	go func() {
 		defer GinkgoRecover()

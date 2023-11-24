@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 )
 
 const (
@@ -129,7 +129,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 		Description    string
 	}
 	type args struct {
-		fieldName passboltv1alpha2.FieldName
+		fieldName passboltv1alpha3.FieldName
 	}
 	tests := []struct {
 		name   string
@@ -148,7 +148,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 				Description:    "Description",
 			},
 			args: args{
-				fieldName: passboltv1alpha2.FieldNamePassword,
+				fieldName: passboltv1alpha3.FieldNamePassword,
 			},
 			want: "Password",
 		},
@@ -163,7 +163,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 				Description:    "Description",
 			},
 			args: args{
-				fieldName: passboltv1alpha2.FieldNameUsername,
+				fieldName: passboltv1alpha3.FieldNameUsername,
 			},
 			want: "Username",
 		},
@@ -178,7 +178,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 				Description:    "Description",
 			},
 			args: args{
-				fieldName: passboltv1alpha2.FieldNameUri,
+				fieldName: passboltv1alpha3.FieldNameUri,
 			},
 			want: "URI",
 		},
@@ -193,7 +193,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 				Description:    "Description",
 			},
 			args: args{
-				fieldName: passboltv1alpha2.FieldName("abc"),
+				fieldName: passboltv1alpha3.FieldName("abc"),
 			},
 			want: "",
 		},

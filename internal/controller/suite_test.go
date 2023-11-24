@@ -35,6 +35,7 @@ import (
 
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	//+kubebuilder:scaffold:imports
 )
@@ -188,6 +189,9 @@ var _ = BeforeSuite(func() {
 	err = passboltv1alpha2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = passboltv1alpha3.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
@@ -213,11 +217,7 @@ var _ = BeforeSuite(func() {
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(k8sManager); err != nil {
-		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret")
-
-	}
-	if err = (&passboltv1alpha2.PassboltSecret{}).SetupWebhookWithManager(k8sManager); err != nil {
+	if err = (&passboltv1alpha3.PassboltSecret{}).SetupWebhookWithManager(k8sManager); err != nil {
 		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret")
 	}
 

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"fmt"
@@ -81,7 +81,6 @@ func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
 		if err != nil {
 			return fmt.Errorf("error migrating secret %s at index %s: %w", s.ID, i, err)
 		}
-
 		dst.Spec.Secrets = append(dst.Spec.Secrets, SecretSpec{
 			KubernetesSecretKey: name,
 			PassboltSecret: PassboltSpec{
@@ -90,7 +89,15 @@ func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
 			},
 		})
 	}
-	// we don't need to add the plain text fields to the spec, as they are not supported in v1alpha1
+	for i, s := range src.Spec.PlainTextFields {
+		dst.Spec.Secrets = append(dst.Spec.Secrets, SecretSpec{
+			KubernetesSecretKey: i,
+			PassboltSecret: PassboltSpec{
+				Name:  i,
+				Value: &s,
+			},
+		})
+	}
 
 	dst.Status.LastSync = src.Status.LastSync
 	dst.Status.SyncStatus = SyncStatus(src.Status.SyncStatus)

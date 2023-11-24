@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha2
+package v1alpha3
 
 import (
 	"errors"
@@ -69,15 +69,15 @@ func (r *PassboltSecret) validatePassboltSecret() error {
 		if r.Spec.PassboltSecretName != nil {
 			return fmt.Errorf("%w for secret %s.%s type %s", ErrPassboltSecretNameIsNotAllowed, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
-		if len(r.Spec.Secrets) == 0 {
+		if len(r.Spec.PassboltSecrets) == 0 {
 			return fmt.Errorf("%w for secret %s.%s type %s", ErrSecretsAreRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		// check if only FieldName or Value is set
-		for _, secret := range r.Spec.Secrets {
-			if secret.PassboltSecret.Field == "" && secret.PassboltSecret.Value == nil {
+		for _, secret := range r.Spec.PassboltSecrets {
+			if secret.Field == "" && secret.Value == nil {
 				return fmt.Errorf("%w for secret %s.%s and field %v", ErrFieldOrValueIsRequired, r.GetName(), r.GetNamespace(), secret)
 			}
-			if secret.PassboltSecret.Field != "" && secret.PassboltSecret.Value != nil {
+			if secret.Field != "" && secret.Value != nil {
 				return fmt.Errorf("%w for secret %s.%s and field %v", ErrFieldAndValueAreNotAllowed, r.GetName(), r.GetNamespace(), secret)
 			}
 		}
@@ -89,7 +89,7 @@ func (r *PassboltSecret) validatePassboltSecret() error {
 		if *r.Spec.PassboltSecretName == "" {
 			return fmt.Errorf("%w for secret %s.%s: %s", ErrPassboltSecretNameIsRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
-		if len(r.Spec.Secrets) > 0 {
+		if len(r.Spec.PassboltSecrets) > 0 {
 			return fmt.Errorf("%w for secret %s.%s type %s", ErrSecretsAreNotAllowed, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		return nil
