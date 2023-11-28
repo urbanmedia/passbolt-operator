@@ -39,9 +39,9 @@ type PassboltSecretSpec struct {
 	// +kubebuilder:default=Opaque
 	// +kubebuilder:validation:Enum=Opaque;kubernetes.io/dockerconfigjson
 	SecretType corev1.SecretType `json:"secretType,omitempty"`
-	// PassboltSecretName is the name of the passbolt secret name to be used as a docker config secret.
+	// PassboltSecretID is the ID of the passbolt secret to be used as a docker config secret.
 	// +kubebuilder:validation:Optional
-	PassboltSecretName *string `json:"passboltSecretName,omitempty"`
+	PassboltSecretID *string `json:"passboltSecretID,omitempty"`
 
 	// PassboltSecrets is a map of string (key in K8s secret) and struct that contains the reference to the secret in passbolt.
 	// +kubebuilder:validation:Optional

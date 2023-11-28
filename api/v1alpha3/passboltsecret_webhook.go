@@ -66,7 +66,7 @@ var _ webhook.Validator = &PassboltSecret{}
 func (r *PassboltSecret) validatePassboltSecret() error {
 	switch r.Spec.SecretType {
 	case corev1.SecretTypeOpaque:
-		if r.Spec.PassboltSecretName != nil {
+		if r.Spec.PassboltSecretID != nil {
 			return fmt.Errorf("%w for secret %s.%s type %s", ErrPassboltSecretNameIsNotAllowed, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		if len(r.Spec.PassboltSecrets) == 0 {
@@ -83,10 +83,10 @@ func (r *PassboltSecret) validatePassboltSecret() error {
 		}
 		return nil
 	case corev1.SecretTypeDockerConfigJson:
-		if r.Spec.PassboltSecretName == nil {
+		if r.Spec.PassboltSecretID == nil {
 			return fmt.Errorf("%w for secret %s.%s: %s", ErrPassboltSecretNameIsRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
-		if *r.Spec.PassboltSecretName == "" {
+		if *r.Spec.PassboltSecretID == "" {
 			return fmt.Errorf("%w for secret %s.%s: %s", ErrPassboltSecretNameIsRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
 		}
 		if len(r.Spec.PassboltSecrets) > 0 {
