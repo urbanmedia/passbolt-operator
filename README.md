@@ -206,6 +206,15 @@ When the Passbolt instance is up and running, the second step would be to execut
 make test
 ```
 
+Note:
+
+When we bootstraped passbolt, we created two secrets:
+
+| ID | Name |
+|----|------|
+| `184734ea-8be3-4f5a-ba6c-5f4b3c0603e8` | `APP_EXAMPLE` |
+| `cec328ec-cb1f-48f6-be1e-1ca35fc3c62d` | `APP2_EXAMPLE` |
+
 ### In Cluster Testing (Kind)
 
 In order to run the end-to-end tests in a Kubernetes cluster, we need to load the Passbolt Operator image into the Kind cluster. To do so, you need to run the following command:
