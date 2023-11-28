@@ -25,6 +25,7 @@ import (
 
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -222,6 +223,85 @@ var _ = Describe("Run Controller", func() {
 						Name:  "APP_EXAMPLE",
 						Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/vhost"; return &s }(),
 					},
+				},
+			}
+			Expect(k8sClient.Update(ctx, pbGetSecret)).Should(Succeed())
+
+			// here we have to delay a little
+			time.Sleep(5 * time.Second)
+
+			By("By checking if PassboltSecret has the correct length")
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pbGetSecret), timeout, interval).Should(Succeed())
+		})
+	})
+
+	Context("Version v1alpha3", func() {
+		It("Should create and update successfully", func() {
+			passboltSecretSpec := passboltv1alpha3.PassboltSecretSpec{
+				LeaveOnDelete: false,
+				PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+					"amqp_dsn": {
+						ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
+						Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/vhost"; return &s }(),
+					},
+					"pg_dsn": {
+						ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
+						Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/vhost"; return &s }(),
+					},
+				},
+			}
+
+			passboltSecret := &passboltv1alpha3.PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+				Spec: passboltSecretSpec,
+			}
+
+			By("By checking the PassboltSecret has been created")
+			// test if the passbolt secret is created
+			ctx := context.Background()
+			Expect(k8sClient.Create(ctx, passboltSecret)).Should(Succeed())
+
+			defer func() {
+				Expect(k8sClient.Delete(context.Background(), passboltSecret)).Should(Succeed())
+				time.Sleep(time.Second * 5)
+				Expect(k8sClient.Delete(context.Background(), &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: namespace,
+					},
+				})).Should(Succeed())
+				time.Sleep(time.Second * 5)
+			}()
+
+			// here we have to delay a little
+			time.Sleep(5 * time.Second)
+
+			By("By checking if PassboltSecret was created")
+			pbGetSecret := &passboltv1alpha3.PassboltSecret{}
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pbGetSecret), timeout, interval).Should(Succeed())
+
+			By("By checking if PassboltSecret has the correct sync status")
+			Expect(pbGetSecret.Status.SyncStatus).Should(Equal(passboltv1alpha3.SyncStatusSuccess))
+
+			By("By checking if Secret was created")
+			secret := &corev1.Secret{}
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, secret), timeout, interval).Should(Succeed())
+
+			By("By checking if Secret has the correct length")
+			Expect(secret.Data).Should(HaveLen(len(pbGetSecret.Spec.PassboltSecrets)))
+
+			By("By checking if Secret has the correct keys")
+			Eventually(secret.Data).Should(HaveKey("amqp_dsn"))
+			Eventually(secret.Data).Should(HaveKey("pg_dsn"))
+
+			By("By checking if Secret can be updated")
+			pbGetSecret.Spec.PassboltSecrets = map[string]passboltv1alpha3.PassboltSecretRef{
+				"dsn": {
+					ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
+					Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/vhost"; return &s }(),
 				},
 			}
 			Expect(k8sClient.Update(ctx, pbGetSecret)).Should(Succeed())
