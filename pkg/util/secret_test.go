@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	corev1 "k8s.io/api/core/v1"
@@ -129,7 +128,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	err = passboltv1alpha2.AddToScheme(scheme)
+	err = passboltv1alpha3.AddToScheme(scheme)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -165,8 +164,8 @@ func TestUpdateSecret(t *testing.T) {
 					},
 					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeDockerConfigJson,
-						PassboltSecretName: func() *string {
-							s := "APP_EXAMPLE"
+						PassboltSecretID: func() *string {
+							s := "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8"
 							return &s
 						}(),
 					},
@@ -185,7 +184,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha2",
+							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -213,7 +212,7 @@ func TestUpdateSecret(t *testing.T) {
 					},
 					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeDockerConfigJson,
-						PassboltSecretName: func() *string {
+						PassboltSecretID: func() *string {
 							s := "APP_EXAMPLE_4"
 							return &s
 						}(),
@@ -246,7 +245,7 @@ func TestUpdateSecret(t *testing.T) {
 						SecretType: corev1.SecretTypeOpaque,
 						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
 							"test": {
-								ID:    "", // FIXME: add ID for secret with name "APP_EXAMPLE"
+								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 								Field: passboltv1alpha3.FieldNameUsername,
 							},
 						},
@@ -266,7 +265,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha2",
+							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -295,8 +294,8 @@ func TestUpdateSecret(t *testing.T) {
 					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
 						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
-							"test": passboltv1alpha3.PassboltSecretRef{
-								ID:    "", // FIXME: add ID for secret with name "APP_EXAMPLE"
+							"test": {
+								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 								Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/sample"; return &s }(),
 							},
 						},
@@ -316,7 +315,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha2",
+							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -345,8 +344,8 @@ func TestUpdateSecret(t *testing.T) {
 					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
 						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
-							"test": passboltv1alpha3.PassboltSecretRef{
-								ID: "", // FIXME: add ID for secret with name "APP_EXAMPLE"
+							"test": {
+								ID: "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 							},
 						},
 					},
@@ -377,8 +376,8 @@ func TestUpdateSecret(t *testing.T) {
 					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeBasicAuth,
 						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
-							"test": passboltv1alpha3.PassboltSecretRef{
-								ID:    "", // FIXME: add ID for secret with name "APP_EXAMPLE"
+							"test": {
+								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 								Field: passboltv1alpha3.FieldNameUsername,
 							},
 						},
@@ -401,11 +400,13 @@ func TestUpdateSecret(t *testing.T) {
 			err := UpdateSecret(tt.args.ctx, tt.args.clnt, tt.args.scheme, tt.args.pbscrt, tt.args.secret)()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateSecret() error = %v != %v", err, tt.wantErr)
+				return
 			}
 
 			diff := cmp.Diff(tt.args.secret, tt.want)
 			if (diff != "") != tt.wantErr {
-				t.Errorf("UpdateSecret() diff = %v", diff)
+				t.Errorf("UpdateSecret() mismatch (-want +got):\n%s", diff)
+				return
 			}
 		})
 	}

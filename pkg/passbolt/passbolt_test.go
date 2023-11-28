@@ -382,8 +382,8 @@ func TestClient_GetSecret(t *testing.T) {
 		client *Client
 	}
 	type args struct {
-		ctx  context.Context
-		name string
+		ctx context.Context
+		id  string
 	}
 	tests := []struct {
 		name    string
@@ -409,8 +409,8 @@ func TestClient_GetSecret(t *testing.T) {
 				}(),
 			},
 			args: args{
-				ctx:  context.Background(),
-				name: "APP_EXAMPLE",
+				ctx: context.Background(),
+				id:  "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 			},
 			want: &PassboltSecretDefinition{
 				Name:     "APP_EXAMPLE",
@@ -437,8 +437,8 @@ func TestClient_GetSecret(t *testing.T) {
 				}(),
 			},
 			args: args{
-				ctx:  context.Background(),
-				name: "example",
+				ctx: context.Background(),
+				id:  "example",
 			},
 			want:    nil,
 			wantErr: true,
@@ -454,7 +454,7 @@ func TestClient_GetSecret(t *testing.T) {
 				return
 			}
 
-			got, err := c.GetSecret(tt.args.ctx, tt.args.name)
+			got, err := c.GetSecret(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Client.GetSecret() error = %v, wantErr %v\nCache data:\n%+v", err, tt.wantErr, tt.fields.client.secretCache)
 				return

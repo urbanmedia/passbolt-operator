@@ -26,11 +26,11 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 		switch pbscrt.Spec.SecretType {
 		case corev1.SecretTypeDockerConfigJson:
 			// get secret from passbolt
-			secretData, err := clnt.GetSecret(ctx, *pbscrt.Spec.PassboltSecretName)
+			secretData, err := clnt.GetSecret(ctx, *pbscrt.Spec.PassboltSecretID)
 			if err != nil {
 				return passboltv1alpha3.SyncError{
 					Message:          err.Error(),
-					PassboltSecretID: *pbscrt.Spec.PassboltSecretName,
+					PassboltSecretID: *pbscrt.Spec.PassboltSecretID,
 					Time:             v1.Now(),
 				}
 			}
@@ -38,7 +38,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 			if err != nil {
 				return passboltv1alpha3.SyncError{
 					Message:          err.Error(),
-					PassboltSecretID: *pbscrt.Spec.PassboltSecretName,
+					PassboltSecretID: *pbscrt.Spec.PassboltSecretID,
 					Time:             v1.Now(),
 				}
 			}

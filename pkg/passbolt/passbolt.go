@@ -194,6 +194,10 @@ func (c *Client) GetSecretName(id string) (string, error) {
 	return "", fmt.Errorf("unable to find secret in cache with id %q", id)
 }
 
+func (c *Client) GetCache() map[string]string {
+	return c.secretCache
+}
+
 // GetSecret retrieves the secret value for the given secret name.
 // Under the hook, this function queries the internal cache for the secret ID by name.
 // If the secret is not in the cache, an error is returned.
