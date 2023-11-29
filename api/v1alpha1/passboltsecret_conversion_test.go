@@ -187,6 +187,24 @@ func TestPassboltSecret_ConvertFrom(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "convert from v1alpha3 dockerconfigjson",
+			args: args{
+				srcRaw: &passboltv1alpha3.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-passboltsecret",
+						Namespace: "default",
+					},
+					Spec: passboltv1alpha3.PassboltSecretSpec{
+						LeaveOnDelete:    false,
+						SecretType:       corev1.SecretTypeDockerConfigJson,
+						PassboltSecretID: func() *string { s := "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8"; return &s }(),
+					},
+				},
+			},
+			want:    &PassboltSecret{},
+			wantErr: true,
+		},
+		{
 			name: "convert from v1alpha3 with value",
 			args: args{
 				srcRaw: &passboltv1alpha3.PassboltSecret{

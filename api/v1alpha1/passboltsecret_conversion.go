@@ -37,6 +37,7 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1alpha3.PassboltSecret)
 	dst.ObjectMeta = src.ObjectMeta
 	src.Spec.LeaveOnDelete = dst.Spec.LeaveOnDelete
+	dst.Spec.SecretType = corev1.SecretTypeOpaque
 	dst.Spec.PassboltSecrets = make(map[string]v1alpha3.PassboltSecretRef)
 	for i, s := range src.Spec.Secrets {
 		pbID, err := GetSecretID(s.PassboltSecret.Name)
@@ -50,7 +51,6 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 		}
 	}
 
-	dst.Spec.SecretType = corev1.SecretTypeOpaque
 	dst.Status.LastSync = src.Status.LastSync
 	dst.Status.SyncStatus = v1alpha3.SyncStatus(src.Status.SyncStatus)
 	dst.Status.SyncErrors = make([]v1alpha3.SyncError, len(src.Status.SyncErrors))
@@ -69,6 +69,11 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
 	passboltsecretlog.V(100).Info("converting from PassboltSecret v1alpha2 to v1alpha1")
 	src := srcRaw.(*v1alpha3.PassboltSecret)
+	// we don't support secrets other than Opaque in v1alpha1
+	if src.Spec.SecretType != corev1.SecretTypeOpaque {
+		return fmt.Errorf("error migrating secret %s in namespace %s: v1alpha1 does not support secret type %s", src.GetName(), src.GetNamespace(), src.Spec.SecretType)
+	}
+
 	dst.ObjectMeta = src.ObjectMeta
 	dst.Spec.LeaveOnDelete = src.Spec.LeaveOnDelete
 	dst.Spec.Secrets = []SecretSpec{}

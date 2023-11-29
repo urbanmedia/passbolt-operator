@@ -54,7 +54,7 @@ func TestPassboltSecret_ConvertTo(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "convert to v1alpha3",
+			name: "convert to v1alpha3 opaque",
 			fields: fields{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-passboltsecret",
@@ -94,6 +94,41 @@ func TestPassboltSecret_ConvertTo(t *testing.T) {
 							Field: passboltv1alpha3.FieldNameUsername,
 						},
 					},
+				},
+				Status: passboltv1alpha3.PassboltSecretStatus{
+					SyncErrors: []passboltv1alpha3.SyncError{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "convert to v1alpha3 dockerconfigjson",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete:      false,
+					SecretType:         corev1.SecretTypeDockerConfigJson,
+					PassboltSecretName: func() *string { s := "APP_EXAMPLE"; return &s }(),
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			args: args{
+				dstRaw: &passboltv1alpha3.PassboltSecret{},
+			},
+			want: &passboltv1alpha3.PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: passboltv1alpha3.PassboltSecretSpec{
+					LeaveOnDelete:    false,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "example-id"; return &s }(),
 				},
 				Status: passboltv1alpha3.PassboltSecretStatus{
 					SyncErrors: []passboltv1alpha3.SyncError{},
@@ -222,6 +257,37 @@ func TestPassboltSecret_ConvertFrom(t *testing.T) {
 							},
 						},
 					},
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "convert from v1alpha3 dockerconfigjson",
+			args: args{
+				srcRaw: &passboltv1alpha3.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-passboltsecret",
+						Namespace: "default",
+					},
+					Spec: passboltv1alpha3.PassboltSecretSpec{
+						LeaveOnDelete:    false,
+						SecretType:       corev1.DockerConfigJsonKey,
+						PassboltSecretID: func() *string { s := "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8"; return &s }(),
+					},
+				},
+			},
+			want: &PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete:      false,
+					SecretType:         corev1.SecretTypeDockerConfigJson,
+					PassboltSecretName: func() *string { s := "APP_EXAMPLE"; return &s }(),
 				},
 				Status: PassboltSecretStatus{
 					SyncErrors: []SyncError{},
