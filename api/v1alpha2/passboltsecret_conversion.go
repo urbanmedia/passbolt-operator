@@ -75,16 +75,16 @@ func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*v1alpha3.PassboltSecret)
 	dst.ObjectMeta = src.ObjectMeta
 	dst.Spec.LeaveOnDelete = src.Spec.LeaveOnDelete
-	dst.Spec.Secrets = make([]SecretSpec, len(src.Spec.PassboltSecrets)+len(src.Spec.PlainTextFields))
+	dst.Spec.Secrets = []SecretSpec{}
 	for i, s := range src.Spec.PassboltSecrets {
-		name, err := GetSecretName(s.ID)
+		id, err := GetSecretName(s.ID)
 		if err != nil {
 			return fmt.Errorf("error migrating secret %s at index %s: %w", s.ID, i, err)
 		}
 		dst.Spec.Secrets = append(dst.Spec.Secrets, SecretSpec{
-			KubernetesSecretKey: name,
+			KubernetesSecretKey: i,
 			PassboltSecret: PassboltSpec{
-				Name:  name,
+				Name:  id,
 				Field: FieldName(s.Field),
 			},
 		})
