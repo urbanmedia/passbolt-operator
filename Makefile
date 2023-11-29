@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= tagesspiegel/passbolt-operator:latest
+IMG ?= tagesspiegel/passbolt-operator:dev
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.27.1
 E2E_APPLY_WAIT_DURATION ?= 10
@@ -69,6 +69,9 @@ test: manifests generate fmt vet envtest ## Run tests.
 .PHONY: coverhtml
 coverhtml: ## Display test coverage in html
 	go tool cover -html=cover.out
+
+.PHONY: dev
+dev: docker-build kind-load install deploy ## Build and deploy container to kind cluster.
 
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests.
