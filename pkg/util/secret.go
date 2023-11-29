@@ -21,7 +21,7 @@ import (
 // The thrown error is of type SyncError
 func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Scheme, pbscrt *passboltv1alpha3.PassboltSecret, secret *corev1.Secret) func() error {
 	fmt.Println(pbscrt.Spec.SecretType)
-	secret.Data = map[string][]byte{}
+	secret.Data = make(map[string][]byte)
 	return func() error {
 		switch pbscrt.Spec.SecretType {
 		case corev1.SecretTypeDockerConfigJson:
