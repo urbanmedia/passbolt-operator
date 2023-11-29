@@ -99,6 +99,11 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
+	err = (&PassboltSecret{}).SetupWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+
+	//+kubebuilder:scaffold:webhook
+
 	go func() {
 		defer GinkgoRecover()
 		err = mgr.Start(ctx)

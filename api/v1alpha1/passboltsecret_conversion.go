@@ -22,7 +22,6 @@ import (
 	"github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -31,9 +30,6 @@ var (
 	// GetBySecretName is a function that returns the ID of a secret by its name.
 	GetSecretName func(id string) (string, error) = nil
 )
-
-// log is for logging in this package.
-var passboltsecretlog = logf.Log.WithName("passboltsecret-resource")
 
 // ConvertTo converts this CronJob to the Hub version (v1alpha2).
 func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {

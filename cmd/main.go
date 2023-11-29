@@ -187,8 +187,16 @@ func main() {
 		os.Exit(1)
 	}
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha1")
+			os.Exit(1)
+		}
+		if err = (&passboltv1alpha2.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha2")
+			os.Exit(1)
+		}
 		if err = (&passboltv1alpha3.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha3")
 			os.Exit(1)
 		}
 	}
