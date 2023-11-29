@@ -101,6 +101,54 @@ func TestPassboltSecret_ConvertTo(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "convert to v1alpha3 with value set",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete: false,
+					SecretType:    corev1.SecretTypeOpaque,
+					Secrets: []SecretSpec{
+						{
+							PassboltSecret: PassboltSpec{
+								Name:  "APP_EXAMPLE",
+								Value: func() *string { s := "{{.Username}}"; return &s }(),
+							},
+							KubernetesSecretKey: "amqp_dsn",
+						},
+					},
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			args: args{
+				dstRaw: &passboltv1alpha3.PassboltSecret{},
+			},
+			want: &passboltv1alpha3.PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: passboltv1alpha3.PassboltSecretSpec{
+					LeaveOnDelete: false,
+					SecretType:    corev1.SecretTypeOpaque,
+					PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+						"amqp_dsn": {
+							ID:    "example-id",
+							Value: func() *string { s := "{{.Username}}"; return &s }(),
+						},
+					},
+				},
+				Status: passboltv1alpha3.PassboltSecretStatus{
+					SyncErrors: []passboltv1alpha3.SyncError{},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -132,11 +180,11 @@ func TestPassboltSecret_ConvertFrom(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    PassboltSecret
+		want    *PassboltSecret
 		wantErr bool
 	}{
 		{
-			name: "convert from v1alpha3",
+			name: "convert from v1alpha3 with field name",
 			args: args{
 				srcRaw: &passboltv1alpha3.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -158,14 +206,13 @@ func TestPassboltSecret_ConvertFrom(t *testing.T) {
 					},
 				},
 			},
-			want: PassboltSecret{
+			want: &PassboltSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-passboltsecret",
 					Namespace: "default",
 				},
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: false,
-					SecretType:    corev1.SecretTypeOpaque,
 					Secrets: []SecretSpec{
 						{
 							KubernetesSecretKey: "amqp_dsn",
@@ -174,14 +221,80 @@ func TestPassboltSecret_ConvertFrom(t *testing.T) {
 								Field: FieldNameUsername,
 							},
 						},
-						{
-							KubernetesSecretKey: "pg_dsn",
-							PassboltSecret: PassboltSpec{
-								Name:  "pg_dsn",
-								Value: func() *string { v := "example-value"; return &v }(),
+					},
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "convert from v1alpha3 with value",
+			args: args{
+				srcRaw: &passboltv1alpha3.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-passboltsecret",
+						Namespace: "default",
+					},
+					Spec: passboltv1alpha3.PassboltSecretSpec{
+						LeaveOnDelete: false,
+						SecretType:    corev1.SecretTypeOpaque,
+						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+							"amqp_dsn": {
+								ID:    "example-id",
+								Value: func() *string { s := "example-value"; return &s }(),
+							},
+						},
+						PlainTextFields: map[string]string{
+							"pg_dsn": "example-value",
+						},
+					},
+				},
+			},
+			want: &PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete: false,
+					Secrets:       []SecretSpec{},
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "convert from v1alpha3 with empty field",
+			args: args{
+				srcRaw: &passboltv1alpha3.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-passboltsecret",
+						Namespace: "default",
+					},
+					Spec: passboltv1alpha3.PassboltSecretSpec{
+						LeaveOnDelete: false,
+						SecretType:    corev1.SecretTypeOpaque,
+						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+							"amqp_dsn": {
+								ID:    "example-id",
+								Field: "",
 							},
 						},
 					},
+				},
+			},
+			want: &PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete: false,
+					Secrets:       []SecretSpec{},
 				},
 				Status: PassboltSecretStatus{
 					SyncErrors: []SyncError{},
