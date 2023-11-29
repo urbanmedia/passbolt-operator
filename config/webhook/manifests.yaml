@@ -12,7 +12,7 @@ webhooks:
       namespace: system
       path: /mutate-passbolt-tagesspiegel-de-v1alpha3-passboltsecret
   failurePolicy: Fail
-  name: mpassboltsecret.kb.io
+  name: mpassboltsecret.tagesspiegel.de
   rules:
   - apiGroups:
     - passbolt.tagesspiegel.de
@@ -38,7 +38,7 @@ webhooks:
       namespace: system
       path: /validate-passbolt-tagesspiegel-de-v1alpha3-passboltsecret
   failurePolicy: Fail
-  name: vpassboltsecret.kb.io
+  name: vpassboltsecret.tagesspiegel.de
   rules:
   - apiGroups:
     - passbolt.tagesspiegel.de
