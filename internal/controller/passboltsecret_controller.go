@@ -80,6 +80,10 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// cleanup status
 	secret.Status.SyncErrors = []passboltv1alpha3.SyncError{}
 
+	if secret.Spec.PassboltSecretID == nil && secret.Spec.PassboltSecrets == nil && secret.Spec.PlainTextFields == nil {
+		return errResult, fmt.Errorf("no passbolt secret id, passbolt secret references or plain text fields defined")
+	}
+
 	// make sure that the secret type is supported
 	if secret.Spec.SecretType != corev1.SecretTypeOpaque && secret.Spec.SecretType != corev1.SecretTypeDockerConfigJson {
 		logr.Info("unsupported secret type", "type", secret.Spec.SecretType)
