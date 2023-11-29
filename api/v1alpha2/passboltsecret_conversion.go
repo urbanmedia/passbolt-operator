@@ -46,7 +46,7 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.PassboltSecrets[s.KubernetesSecretKey] = v1alpha3.PassboltSecretRef{
 			ID:    pbID,
 			Field: v1alpha3.FieldName(s.PassboltSecret.Field),
-			Value: nil,
+			Value: s.PassboltSecret.Value,
 		}
 	}
 
@@ -82,6 +82,7 @@ func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
 			PassboltSecret: PassboltSpec{
 				Name:  id,
 				Field: FieldName(s.Field),
+				Value: s.Value,
 			},
 		})
 	}
