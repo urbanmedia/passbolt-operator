@@ -70,8 +70,15 @@ test: manifests generate fmt vet envtest ## Run tests.
 coverhtml: ## Display test coverage in html
 	go tool cover -html=cover.out
 
+deps: ## Install operator dependencies like cert-manager and prometheus crds to the cluster
+	helm upgrade --install cert-manager jetstack/cert-manager -n cert-manager-system --create-namespace --set installCRDs=true --set prometheus.enabled=false > /dev/null
+	helm upgrade --install prometheus-crds prometheus-community/prometheus-operator-crds -n prometheus-operator-system --create-namespace > /dev/null
+
+operator_ns="passbolt-operator-system"
+
 .PHONY: dev
-dev: docker-build kind-load install deploy ## Build and deploy container to kind cluster.
+dev: docker-build kind-load deps install deploy ## Build, load container image to kind, install deps and install and deploy the operator to the Kubernetes cluster.
+	kubectl -n ${operator_ns} rollout restart deployment passbolt-operator-controller-manager
 
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests.
