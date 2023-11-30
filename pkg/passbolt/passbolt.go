@@ -25,7 +25,7 @@ import (
 	"github.com/passbolt/go-passbolt/api"
 	"github.com/passbolt/go-passbolt/helper"
 	"github.com/prometheus/client_golang/prometheus"
-	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -90,13 +90,13 @@ type PassboltSecretDefinition struct {
 }
 
 // FieldValue returns the value of the given field by name.
-func (p PassboltSecretDefinition) FieldValue(fieldName passboltv1alpha2.FieldName) string {
+func (p PassboltSecretDefinition) FieldValue(fieldName passboltv1alpha3.FieldName) string {
 	switch fieldName {
-	case passboltv1alpha2.FieldNameUsername:
+	case passboltv1alpha3.FieldNameUsername:
 		return p.Username
-	case passboltv1alpha2.FieldNameUri:
+	case passboltv1alpha3.FieldNameUri:
 		return p.URI
-	case passboltv1alpha2.FieldNamePassword:
+	case passboltv1alpha3.FieldNamePassword:
 		return p.Password
 	default:
 		return ""
@@ -168,22 +168,44 @@ func (c *Client) Close(ctx context.Context) error {
 	return c.passboltClient.Logout(ctx)
 }
 
+// GetSecretID retrieves the secret ID for the given secret name from the cache.
+func (c *Client) GetSecretID(name string) (string, error) {
+	// prevent concurrent access to the cache
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	// check if the secret is in the cache
+	if _, ok := c.secretCache[name]; !ok {
+		return "", fmt.Errorf("unable to find secret in cache with name %q", name)
+	}
+	return c.secretCache[name], nil
+}
+
+// GetSecretName retrieves the secret name for the given secret ID from the cache.
+func (c *Client) GetSecretName(id string) (string, error) {
+	// prevent concurrent access to the cache
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	// check if the secret is in the cache
+	for name, secretID := range c.secretCache {
+		if secretID == id {
+			return name, nil
+		}
+	}
+	return "", fmt.Errorf("unable to find secret in cache with id %q", id)
+}
+
+func (c *Client) GetCache() map[string]string {
+	return c.secretCache
+}
+
 // GetSecret retrieves the secret value for the given secret name.
 // Under the hook, this function queries the internal cache for the secret ID by name.
 // If the secret is not in the cache, an error is returned.
 // If the secret is in the cache, the secret is retrieved from passbolt.
-func (c *Client) GetSecret(ctx context.Context, name string) (*PassboltSecretDefinition, error) {
+func (c *Client) GetSecret(ctx context.Context, id string) (*PassboltSecretDefinition, error) {
 	passboltSecretGetAttemptsTotal.Inc()
-	// prevent concurrent access to the cache
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	// check if the secret is in the cache
-	if _, ok := c.secretCache[name]; !ok {
-		passboltSecretGetFailureAttemptsTotal.Inc()
-		return nil, fmt.Errorf("unable to find secret in cache with name %q", name)
-	}
 	// retrieve the secret
-	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, c.secretCache[name])
+	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, id)
 	if err != nil {
 		passboltSecretGetFailureAttemptsTotal.Inc()
 		return nil, fmt.Errorf("failed to get secret with name %q: %w", name, err)

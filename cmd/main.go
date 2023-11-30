@@ -33,8 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
+	"github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	"github.com/urbanmedia/passbolt-operator/internal/controller"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	"github.com/urbanmedia/passbolt-operator/pkg/util"
@@ -57,6 +60,7 @@ func init() {
 
 	utilruntime.Must(passboltv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(passboltv1alpha2.AddToScheme(scheme))
+	utilruntime.Must(passboltv1alpha3.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -111,6 +115,13 @@ func main() {
 		setupLog.Error(err, "unable to create passbolt client")
 		os.Exit(1)
 	}
+
+	// initialize passbolt client cache hit functions
+	// TODO: this is not ideal, but as long as we support v1alpha1 and v1alpha2, we need to do it this way
+	v1alpha1.GetSecretID = clnt.GetSecretID
+	v1alpha1.GetSecretName = clnt.GetSecretName
+	v1alpha2.GetSecretID = clnt.GetSecretID
+	v1alpha2.GetSecretName = clnt.GetSecretName
 
 	// initial cache load
 	err = clnt.LoadCache(ctx)
@@ -177,11 +188,15 @@ func main() {
 	}
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha1")
 			os.Exit(1)
 		}
 		if err = (&passboltv1alpha2.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha2")
+			os.Exit(1)
+		}
+		if err = (&passboltv1alpha3.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha3")
 			os.Exit(1)
 		}
 	}

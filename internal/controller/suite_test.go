@@ -33,8 +33,11 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/urbanmedia/passbolt-operator/api/v1alpha1"
 	passboltv1alpha1 "github.com/urbanmedia/passbolt-operator/api/v1alpha1"
+	"github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	//+kubebuilder:scaffold:imports
 )
@@ -177,6 +180,11 @@ var _ = BeforeSuite(func() {
 	err = passboltClient.LoadCache(ctx2)
 	Expect(err).NotTo(HaveOccurred())
 
+	v1alpha1.GetSecretID = passboltClient.GetSecretID
+	v1alpha1.GetSecretName = passboltClient.GetSecretName
+	v1alpha2.GetSecretID = passboltClient.GetSecretID
+	v1alpha2.GetSecretName = passboltClient.GetSecretName
+
 	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
@@ -186,6 +194,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = passboltv1alpha2.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = passboltv1alpha3.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
@@ -214,11 +225,13 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	if err = (&passboltv1alpha1.PassboltSecret{}).SetupWebhookWithManager(k8sManager); err != nil {
-		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret")
-
+		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha1")
 	}
 	if err = (&passboltv1alpha2.PassboltSecret{}).SetupWebhookWithManager(k8sManager); err != nil {
-		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret")
+		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha2")
+	}
+	if err = (&passboltv1alpha3.PassboltSecret{}).SetupWebhookWithManager(k8sManager); err != nil {
+		Expect(err).ToNot(HaveOccurred(), "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha3")
 	}
 
 	go func() {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,7 +128,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	err = passboltv1alpha2.AddToScheme(scheme)
+	err = passboltv1alpha3.AddToScheme(scheme)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestUpdateSecret(t *testing.T) {
 		ctx    context.Context
 		clnt   *passbolt.Client
 		scheme *runtime.Scheme
-		pbscrt *passboltv1alpha2.PassboltSecret
+		pbscrt *passboltv1alpha3.PassboltSecret
 		secret *corev1.Secret
 	}
 	tests := []struct {
@@ -157,15 +157,15 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha2.PassboltSecret{
+				pbscrt: &passboltv1alpha3.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha2.PassboltSecretSpec{
+					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeDockerConfigJson,
-						PassboltSecretName: func() *string {
-							s := "APP_EXAMPLE"
+						PassboltSecretID: func() *string {
+							s := "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8"
 							return &s
 						}(),
 					},
@@ -184,7 +184,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha2",
+							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -205,14 +205,14 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha2.PassboltSecret{
+				pbscrt: &passboltv1alpha3.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha2.PassboltSecretSpec{
+					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeDockerConfigJson,
-						PassboltSecretName: func() *string {
+						PassboltSecretID: func() *string {
 							s := "APP_EXAMPLE_4"
 							return &s
 						}(),
@@ -236,20 +236,17 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha2.PassboltSecret{
+				pbscrt: &passboltv1alpha3.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha2.PassboltSecretSpec{
+					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
-						Secrets: []passboltv1alpha2.SecretSpec{
-							{
-								KubernetesSecretKey: "test",
-								PassboltSecret: passboltv1alpha2.PassboltSpec{
-									Name:  "APP_EXAMPLE",
-									Field: passboltv1alpha2.FieldNameUsername,
-								},
+						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+							"test": {
+								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
+								Field: passboltv1alpha3.FieldNameUsername,
 							},
 						},
 					},
@@ -268,7 +265,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha2",
+							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -289,20 +286,17 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha2.PassboltSecret{
+				pbscrt: &passboltv1alpha3.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha2.PassboltSecretSpec{
+					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
-						Secrets: []passboltv1alpha2.SecretSpec{
-							{
-								KubernetesSecretKey: "test",
-								PassboltSecret: passboltv1alpha2.PassboltSpec{
-									Name:  "APP_EXAMPLE",
-									Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/sample"; return &s }(),
-								},
+						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+							"test": {
+								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
+								Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/sample"; return &s }(),
 							},
 						},
 					},
@@ -321,7 +315,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha2",
+							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -337,24 +331,75 @@ func TestUpdateSecret(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "secret field not templating not set",
+			name: "secret type opaque with plain text value",
 			args: args{
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha2.PassboltSecret{
+				pbscrt: &passboltv1alpha3.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha2.PassboltSecretSpec{
+					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
-						Secrets: []passboltv1alpha2.SecretSpec{
-							{
-								KubernetesSecretKey: "test",
-								PassboltSecret: passboltv1alpha2.PassboltSpec{
-									Name: "APP_EXAMPLE",
-								},
+						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+							"test": {
+								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
+								Field: passboltv1alpha3.FieldNameUsername,
+							},
+						},
+						PlainTextFields: map[string]string{
+							"foo": "bar",
+						},
+					},
+				},
+				secret: &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Type: corev1.SecretTypeOpaque,
+				},
+			},
+			want: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							Kind:               "PassboltSecret",
+							Name:               "test",
+							Controller:         func() *bool { b := true; return &b }(),
+							BlockOwnerDeletion: func() *bool { b := true; return &b }(),
+						},
+					},
+				},
+				Type: corev1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					"test": []byte(`admin`),
+					"foo":  []byte(`bar`),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "secret field and templating not set",
+			args: args{
+				ctx:    context.Background(),
+				clnt:   client,
+				scheme: scheme,
+				pbscrt: &passboltv1alpha3.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: passboltv1alpha3.PassboltSecretSpec{
+						SecretType: corev1.SecretTypeOpaque,
+						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+							"test": {
+								ID: "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 							},
 						},
 					},
@@ -377,20 +422,17 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha2.PassboltSecret{
+				pbscrt: &passboltv1alpha3.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha2.PassboltSecretSpec{
+					Spec: passboltv1alpha3.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeBasicAuth,
-						Secrets: []passboltv1alpha2.SecretSpec{
-							{
-								KubernetesSecretKey: "test",
-								PassboltSecret: passboltv1alpha2.PassboltSpec{
-									Name:  "APP_EXAMPLE",
-									Field: passboltv1alpha2.FieldNameUsername,
-								},
+						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+							"test": {
+								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
+								Field: passboltv1alpha3.FieldNameUsername,
 							},
 						},
 					},
@@ -412,11 +454,13 @@ func TestUpdateSecret(t *testing.T) {
 			err := UpdateSecret(tt.args.ctx, tt.args.clnt, tt.args.scheme, tt.args.pbscrt, tt.args.secret)()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateSecret() error = %v != %v", err, tt.wantErr)
+				return
 			}
 
 			diff := cmp.Diff(tt.args.secret, tt.want)
 			if (diff != "") != tt.wantErr {
-				t.Errorf("UpdateSecret() diff = %v", diff)
+				t.Errorf("UpdateSecret() mismatch (-want +got):\n%s", diff)
+				return
 			}
 		})
 	}

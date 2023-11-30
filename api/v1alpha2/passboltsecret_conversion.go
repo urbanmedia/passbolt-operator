@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"fmt"
@@ -37,18 +37,31 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1alpha3.PassboltSecret)
 	dst.ObjectMeta = src.ObjectMeta
 	src.Spec.LeaveOnDelete = dst.Spec.LeaveOnDelete
-	dst.Spec.SecretType = corev1.SecretTypeOpaque
-	dst.Spec.PassboltSecrets = make(map[string]v1alpha3.PassboltSecretRef)
-	for i, s := range src.Spec.Secrets {
-		pbID, err := GetSecretID(s.PassboltSecret.Name)
+	dst.Spec.SecretType = src.Spec.SecretType
+
+	// migrate secrets of type Opaque
+	if src.Spec.SecretType == corev1.SecretTypeOpaque {
+		dst.Spec.PassboltSecrets = make(map[string]v1alpha3.PassboltSecretRef)
+		for i, s := range src.Spec.Secrets {
+			pbID, err := GetSecretID(s.PassboltSecret.Name)
+			if err != nil {
+				return fmt.Errorf("error migrating secret %s at index %d: %w", s.PassboltSecret.Name, i, err)
+			}
+			dst.Spec.PassboltSecrets[s.KubernetesSecretKey] = v1alpha3.PassboltSecretRef{
+				ID:    pbID,
+				Field: v1alpha3.FieldName(s.PassboltSecret.Field),
+				Value: s.PassboltSecret.Value,
+			}
+		}
+	}
+
+	// migrate secrets of type kubernetes.io/dockerconfigjson
+	if src.Spec.SecretType == corev1.SecretTypeDockerConfigJson {
+		pbID, err := GetSecretID(*src.Spec.PassboltSecretName)
 		if err != nil {
-			return fmt.Errorf("error migrating secret %s at index %d: %w", s.PassboltSecret.Name, i, err)
+			return fmt.Errorf("error migrating secret %s in namespace %s: %w", src.GetName(), src.GetNamespace(), err)
 		}
-		dst.Spec.PassboltSecrets[s.KubernetesSecretKey] = v1alpha3.PassboltSecretRef{
-			ID:    pbID,
-			Field: v1alpha3.FieldName(s.PassboltSecret.Field),
-			Value: nil,
-		}
+		dst.Spec.PassboltSecretID = &pbID
 	}
 
 	dst.Status.LastSync = src.Status.LastSync
@@ -69,34 +82,44 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
 	passboltsecretlog.V(100).Info("converting from PassboltSecret v1alpha2 to v1alpha1")
 	src := srcRaw.(*v1alpha3.PassboltSecret)
-	// we don't support secrets other than Opaque in v1alpha1
-	if src.Spec.SecretType != corev1.SecretTypeOpaque {
-		return fmt.Errorf("error migrating secret %s in namespace %s: v1alpha1 does not support secret type %s", src.GetName(), src.GetNamespace(), src.Spec.SecretType)
-	}
-
 	dst.ObjectMeta = src.ObjectMeta
 	dst.Spec.LeaveOnDelete = src.Spec.LeaveOnDelete
-	dst.Spec.Secrets = []SecretSpec{}
-	for i, s := range src.Spec.PassboltSecrets {
-		name, err := GetSecretName(s.ID)
-		if err != nil {
-			return fmt.Errorf("error migrating secret %s at index %s: %w", s.ID, i, err)
-		}
+	dst.Spec.SecretType = src.Spec.SecretType
 
-		if s.Value != nil || s.Field == "" {
-			// we don't support migrating secrets with "values" in v1alpha1 or secrets without a field reference
-			continue
+	if src.Spec.SecretType == corev1.SecretTypeOpaque {
+		dst.Spec.Secrets = []SecretSpec{}
+		for i, s := range src.Spec.PassboltSecrets {
+			id, err := GetSecretName(s.ID)
+			if err != nil {
+				return fmt.Errorf("error migrating secret %s at index %s: %w", s.ID, i, err)
+			}
+			dst.Spec.Secrets = append(dst.Spec.Secrets, SecretSpec{
+				KubernetesSecretKey: i,
+				PassboltSecret: PassboltSpec{
+					Name:  id,
+					Field: FieldName(s.Field),
+					Value: s.Value,
+				},
+			})
 		}
-
-		dst.Spec.Secrets = append(dst.Spec.Secrets, SecretSpec{
-			KubernetesSecretKey: i,
-			PassboltSecret: PassboltSpec{
-				Name:  name,
-				Field: FieldName(s.Field),
-			},
-		})
+		for i, s := range src.Spec.PlainTextFields {
+			dst.Spec.Secrets = append(dst.Spec.Secrets, SecretSpec{
+				KubernetesSecretKey: i,
+				PassboltSecret: PassboltSpec{
+					Name:  i,
+					Value: &s,
+				},
+			})
+		}
 	}
-	// we don't need to add the plain text fields to the spec, as they are not supported in v1alpha1
+
+	if src.Spec.SecretType == corev1.SecretTypeDockerConfigJson {
+		name, err := GetSecretName(*src.Spec.PassboltSecretID)
+		if err != nil {
+			return fmt.Errorf("error migrating secret %s: %w", *src.Spec.PassboltSecretID, err)
+		}
+		dst.Spec.PassboltSecretName = &name
+	}
 
 	dst.Status.LastSync = src.Status.LastSync
 	dst.Status.SyncStatus = SyncStatus(src.Status.SyncStatus)

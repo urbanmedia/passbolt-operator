@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha2
+package v1alpha3
 
 import (
 	"testing"
@@ -222,12 +222,10 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Field: FieldNamePassword,
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							ID:    "",
+							Field: "FieldNamePassword",
 						},
 					},
 				},
@@ -240,12 +238,10 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Value: func() *string { s := "host={{.URI}}"; return &s }(),
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							ID:    "",
+							Value: func() *string { s := "host={{.URI}}"; return &s }(),
 						},
 					},
 				},
@@ -258,16 +254,14 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecretName: func() *string {
+					PassboltSecretID: func() *string {
 						s := "test"
 						return &s
 					}(),
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Field: FieldNamePassword,
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							ID:    "",
+							Field: "FieldNamePassword",
 						},
 					},
 				},
@@ -278,9 +272,9 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 			name: "invalid Opaque secret length of secrets is 0",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					Secrets:       []SecretSpec{},
+					LeaveOnDelete:   true,
+					SecretType:      corev1.SecretTypeOpaque,
+					PassboltSecrets: make(map[string]PassboltSecretRef),
 				},
 			},
 			wantErr: true,
@@ -291,11 +285,8 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret:      PassboltSpec{},
-							KubernetesSecretKey: "test",
-						},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{},
 					},
 				},
 			},
@@ -307,13 +298,10 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Field: FieldNamePassword,
-								Value: func() *string { s := "host={{.URI}}"; return &s }(),
-							},
-							KubernetesSecretKey: "test",
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Field: "FieldNamePassword",
+							Value: func() *string { s := "host={{.URI}}"; return &s }(),
 						},
 					},
 				},
@@ -325,9 +313,9 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 			name: "valid DockerConfigJson secret",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := "test"; return &s }(),
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "test"; return &s }(),
 				},
 			},
 			wantErr: false,
@@ -346,9 +334,9 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 			name: "invalid DockerConfigJson secret PassboltSecretName is empty",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := ""; return &s }(),
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := ""; return &s }(),
 				},
 			},
 			wantErr: true,
@@ -357,14 +345,11 @@ func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
 			name: "invalid DockerConfigJson secret secrets is set",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := "as"; return &s }(),
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret:      PassboltSpec{},
-							KubernetesSecretKey: "asd",
-						},
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "as"; return &s }(),
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{},
 					},
 				},
 			},
@@ -466,12 +451,10 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Field: FieldNamePassword,
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							ID:    "",
+							Field: FieldNamePassword,
 						},
 					},
 				},
@@ -484,12 +467,10 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Value: func() *string { s := "host={{.URI}}"; return &s }(),
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							ID:    "",
+							Value: func() *string { s := "host={{.URI}}"; return &s }(),
 						},
 					},
 				},
@@ -502,16 +483,14 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecretName: func() *string {
+					PassboltSecretID: func() *string {
 						s := "test"
 						return &s
 					}(),
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Field: FieldNamePassword,
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							ID:    "",
+							Field: FieldNamePassword,
 						},
 					},
 				},
@@ -522,9 +501,9 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 			name: "invalid Opaque secret length of secrets is 0",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					Secrets:       []SecretSpec{},
+					LeaveOnDelete:   true,
+					SecretType:      corev1.SecretTypeOpaque,
+					PassboltSecrets: make(map[string]PassboltSecretRef),
 				},
 			},
 			wantErr: true,
@@ -535,11 +514,8 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret:      PassboltSpec{},
-							KubernetesSecretKey: "test",
-						},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{},
 					},
 				},
 			},
@@ -551,13 +527,10 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Field: FieldNamePassword,
-								Value: func() *string { s := "host={{.URI}}"; return &s }(),
-							},
-							KubernetesSecretKey: "test",
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Field: FieldNamePassword,
+							Value: func() *string { s := "host={{.URI}}"; return &s }(),
 						},
 					},
 				},
@@ -569,9 +542,9 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 			name: "valid DockerConfigJson secret",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := "test"; return &s }(),
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "test"; return &s }(),
 				},
 			},
 			wantErr: false,
@@ -590,9 +563,9 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 			name: "invalid DockerConfigJson secret PassboltSecretName is empty",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := ""; return &s }(),
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := ""; return &s }(),
 				},
 			},
 			wantErr: true,
@@ -601,14 +574,11 @@ func TestPassboltSecret_ValidateCreate(t *testing.T) {
 			name: "invalid DockerConfigJson secret secrets is set",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := "as"; return &s }(),
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret:      PassboltSpec{},
-							KubernetesSecretKey: "asd",
-						},
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "as"; return &s }(),
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"asd": PassboltSecretRef{},
 					},
 				},
 			},
@@ -714,12 +684,9 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Field: FieldNamePassword,
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Field: FieldNamePassword,
 						},
 					},
 				},
@@ -732,12 +699,9 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Value: func() *string { s := "host={{.URI}}"; return &s }(),
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Value: func() *string { s := "host={{.URI}}"; return &s }(),
 						},
 					},
 				},
@@ -750,16 +714,13 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecretName: func() *string {
+					PassboltSecretID: func() *string {
 						s := "test"
 						return &s
 					}(),
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Field: FieldNamePassword,
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Field: FieldNamePassword,
 						},
 					},
 				},
@@ -770,9 +731,9 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 			name: "invalid Opaque secret length of secrets is 0",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					Secrets:       []SecretSpec{},
+					LeaveOnDelete:   true,
+					SecretType:      corev1.SecretTypeOpaque,
+					PassboltSecrets: map[string]PassboltSecretRef{},
 				},
 			},
 			wantErr: true,
@@ -783,11 +744,8 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret:      PassboltSpec{},
-							KubernetesSecretKey: "test",
-						},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{},
 					},
 				},
 			},
@@ -799,13 +757,10 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Field: FieldNamePassword,
-								Value: func() *string { s := "host={{.URI}}"; return &s }(),
-							},
-							KubernetesSecretKey: "test",
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Field: FieldNamePassword,
+							Value: func() *string { s := "host={{.URI}}"; return &s }(),
 						},
 					},
 				},
@@ -817,9 +772,9 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 			name: "valid DockerConfigJson secret",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := "test"; return &s }(),
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "test"; return &s }(),
 				},
 			},
 			wantErr: false,
@@ -838,9 +793,9 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 			name: "invalid DockerConfigJson secret PassboltSecretName is empty",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := ""; return &s }(),
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := ""; return &s }(),
 				},
 			},
 			wantErr: true,
@@ -849,14 +804,11 @@ func TestPassboltSecret_ValidateUpdate(t *testing.T) {
 			name: "invalid DockerConfigJson secret secrets is set",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := "as"; return &s }(),
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret:      PassboltSpec{},
-							KubernetesSecretKey: "asd",
-						},
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "as"; return &s }(),
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"asd": PassboltSecretRef{},
 					},
 				},
 			},
@@ -958,12 +910,9 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Field: FieldNamePassword,
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Field: FieldNamePassword,
 						},
 					},
 				},
@@ -976,12 +925,9 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Value: func() *string { s := "host={{.URI}}"; return &s }(),
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Value: func() *string { s := "host={{.URI}}"; return &s }(),
 						},
 					},
 				},
@@ -994,16 +940,13 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecretName: func() *string {
+					PassboltSecretID: func() *string {
 						s := "test"
 						return &s
 					}(),
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Name:  "test",
-								Field: FieldNamePassword,
-							},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Field: FieldNamePassword,
 						},
 					},
 				},
@@ -1014,9 +957,9 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 			name: "invalid Opaque secret length of secrets is 0",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					Secrets:       []SecretSpec{},
+					LeaveOnDelete:   true,
+					SecretType:      corev1.SecretTypeOpaque,
+					PassboltSecrets: make(map[string]PassboltSecretRef),
 				},
 			},
 			wantErr: true,
@@ -1027,11 +970,8 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret:      PassboltSpec{},
-							KubernetesSecretKey: "test",
-						},
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{},
 					},
 				},
 			},
@@ -1043,13 +983,10 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 				Spec: PassboltSecretSpec{
 					LeaveOnDelete: true,
 					SecretType:    corev1.SecretTypeOpaque,
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret: PassboltSpec{
-								Field: FieldNamePassword,
-								Value: func() *string { s := "host={{.URI}}"; return &s }(),
-							},
-							KubernetesSecretKey: "test",
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"test": PassboltSecretRef{
+							Field: FieldNamePassword,
+							Value: func() *string { s := "host={{.URI}}"; return &s }(),
 						},
 					},
 				},
@@ -1061,9 +998,9 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 			name: "valid DockerConfigJson secret",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := "test"; return &s }(),
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "test"; return &s }(),
 				},
 			},
 			wantErr: false,
@@ -1082,9 +1019,9 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 			name: "invalid DockerConfigJson secret PassboltSecretName is empty",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := ""; return &s }(),
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := ""; return &s }(),
 				},
 			},
 			wantErr: true,
@@ -1093,14 +1030,11 @@ func TestPassboltSecret_ValidateDelete(t *testing.T) {
 			name: "invalid DockerConfigJson secret secrets is set",
 			fields: fields{
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:      true,
-					SecretType:         corev1.SecretTypeDockerConfigJson,
-					PassboltSecretName: func() *string { s := "as"; return &s }(),
-					Secrets: []SecretSpec{
-						{
-							PassboltSecret:      PassboltSpec{},
-							KubernetesSecretKey: "asd",
-						},
+					LeaveOnDelete:    true,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "as"; return &s }(),
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"asd": PassboltSecretRef{},
 					},
 				},
 			},

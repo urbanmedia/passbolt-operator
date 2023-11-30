@@ -9,7 +9,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,76 +19,80 @@ import (
 
 // UpdateSecret updates the kubernetes secret with the data from passbolt
 // The thrown error is of type SyncError
-func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Scheme, pbscrt *passboltv1alpha2.PassboltSecret, secret *corev1.Secret) func() error {
+func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Scheme, pbscrt *passboltv1alpha3.PassboltSecret, secret *corev1.Secret) func() error {
 	fmt.Println(pbscrt.Spec.SecretType)
-	secret.Data = map[string][]byte{}
+	secret.Data = make(map[string][]byte)
 	return func() error {
 		switch pbscrt.Spec.SecretType {
 		case corev1.SecretTypeDockerConfigJson:
 			// get secret from passbolt
-			secretData, err := clnt.GetSecret(ctx, *pbscrt.Spec.PassboltSecretName)
+			secretData, err := clnt.GetSecret(ctx, *pbscrt.Spec.PassboltSecretID)
 			if err != nil {
-				return passboltv1alpha2.SyncError{
-					Message:    err.Error(),
-					SecretName: *pbscrt.Spec.PassboltSecretName,
-					Time:       v1.Now(),
+				return passboltv1alpha3.SyncError{
+					Message:          err.Error(),
+					PassboltSecretID: *pbscrt.Spec.PassboltSecretID,
+					Time:             v1.Now(),
 				}
 			}
 			dockerConfigJson, err := getSecretDockerConfigJson(secretData)
 			if err != nil {
-				return passboltv1alpha2.SyncError{
-					Message:    err.Error(),
-					SecretName: *pbscrt.Spec.PassboltSecretName,
-					Time:       v1.Now(),
+				return passboltv1alpha3.SyncError{
+					Message:          err.Error(),
+					PassboltSecretID: *pbscrt.Spec.PassboltSecretID,
+					Time:             v1.Now(),
 				}
 			}
 			secret.Data = dockerConfigJson
 		case corev1.SecretTypeOpaque:
+			for key, value := range pbscrt.Spec.PlainTextFields {
+				secret.Data[key] = []byte(value)
+			}
+
 			// iterate over all secrets and get secret from passbolt
-			for _, pbSecret := range pbscrt.Spec.Secrets {
-				secretData, err := clnt.GetSecret(ctx, pbSecret.PassboltSecret.Name)
+			for secretKeyName, pbSecret := range pbscrt.Spec.PassboltSecrets {
+				secretData, err := clnt.GetSecret(ctx, pbSecret.ID)
 				if err != nil {
-					return passboltv1alpha2.SyncError{
-						Message:    err.Error(),
-						SecretName: pbSecret.PassboltSecret.Name,
-						SecretKey:  pbSecret.KubernetesSecretKey,
-						Time:       v1.Now(),
+					return passboltv1alpha3.SyncError{
+						Message:          err.Error(),
+						PassboltSecretID: pbSecret.ID,
+						SecretKey:        secretKeyName,
+						Time:             v1.Now(),
 					}
 				}
 
 				switch {
 				// check if field is set
 				// if field is set, get field value from passbolt secret and set it as kubernetes secret value
-				case pbSecret.PassboltSecret.Field != "":
-					secret.Data[pbSecret.KubernetesSecretKey] = []byte(secretData.FieldValue(pbSecret.PassboltSecret.Field))
+				case pbSecret.Field != "":
+					secret.Data[secretKeyName] = []byte(secretData.FieldValue(pbSecret.Field))
 					continue
 				// check if value is set
 				// if value is set, parse value as template and set it as kubernetes secret value
-				case pbSecret.PassboltSecret.Value != nil:
-					bts, err := getSecretTemplateValueData(*pbSecret.PassboltSecret.Value, secretData)
+				case pbSecret.Value != nil:
+					bts, err := getSecretTemplateValueData(*pbSecret.Value, secretData)
 					if err != nil {
-						return passboltv1alpha2.SyncError{
-							Message:    err.Error(),
-							SecretName: pbSecret.PassboltSecret.Name,
-							SecretKey:  pbSecret.KubernetesSecretKey,
-							Time:       v1.Now(),
+						return passboltv1alpha3.SyncError{
+							Message:          err.Error(),
+							PassboltSecretID: pbSecret.ID,
+							SecretKey:        secretKeyName,
+							Time:             v1.Now(),
 						}
 					}
-					secret.Data[pbSecret.KubernetesSecretKey] = bts
+					secret.Data[secretKeyName] = bts
 					continue
 					// neither field nor value is set
 				default:
-					return passboltv1alpha2.SyncError{
-						Message:    "either field or value must be set",
-						SecretName: pbSecret.PassboltSecret.Name,
-						SecretKey:  pbSecret.KubernetesSecretKey,
-						Time:       v1.Now(),
+					return passboltv1alpha3.SyncError{
+						Message:          "either field or value must be set",
+						PassboltSecretID: pbSecret.ID,
+						SecretKey:        secretKeyName,
+						Time:             v1.Now(),
 					}
 				}
 			}
 		// secret type is not supported
 		default:
-			return passboltv1alpha2.SyncError{
+			return passboltv1alpha3.SyncError{
 				Message: fmt.Sprintf("secret type %s is not supported", pbscrt.Spec.SecretType),
 				Time:    v1.Now(),
 			}
@@ -98,7 +102,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 			// set owner reference
 			err := ctrl.SetControllerReference(pbscrt, secret, scheme)
 			if err != nil {
-				return passboltv1alpha2.SyncError{
+				return passboltv1alpha3.SyncError{
 					Message: err.Error(),
 					Time:    v1.Now(),
 				}

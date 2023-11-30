@@ -11,23 +11,23 @@ This repository contains the Kubernetes Operator for Passbolt. Passbolt is an op
 The Passbolt Operator allows you to synchronize your Passbolt credentials with Kubernetes Secrets. To do so, you need to create a `PassboltSecret` resource. The `PassboltSecret` resource is a Kubernetes Custom Resource Definition (CRD) that allows you to define the Passbolt credentials that you want to synchronize with Kubernetes Secrets. The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets.
 
 ```yaml
-apiVersion: passbolt.tagesspiegel.de/v1alpha2
+apiVersion: passbolt.tagesspiegel.de/v1alpha3
 kind: PassboltSecret
 metadata:
-  name: passbolt-secret-sample
-  namespace: default
+  name: passboltsecret-sample
 spec:
   leaveOnDelete: false
   secretType: Opaque
-  secrets:
-    - kubernetesSecretKey: "username"
-      passboltSecret:
-        name: "EXAMPLE_APP"
-        field: username
-    - kubernetesSecretKey: "pg_dsn"
-      passboltSecret:
-        name: "EXAMPLE_APP"
-        value: postgres://{{ .Username }}@{{ .URI }}/mydb?sslmode=disable&password={{ .Password }}
+  passboltSecrets:
+    s3_access_key:
+      name: EXAMPLE_APP
+      field: username
+    dsn:
+      name: EXAMPLE_APP
+      value: postgres://{{ .Username }}@{{ .URI }}/mydb?sslmode=disable&password={{ .Password }}
+  plainTextFields:
+    key: value
+    foo: bar
 ```
 
 The `PassboltSecret` resource contains the following fields:
@@ -36,12 +36,12 @@ The `PassboltSecret` resource contains the following fields:
 | ----- | ---- | ------- | -------- | --------- | ----------- |
 | `leaveOnDelete` | `bool` | `false` | false | - | A boolean that indicates if the Passbolt Operator should leave the Kubernetes Secret on deletion of the `PassboltSecret` resource. |
 | `secretType` | `string` | `Opaque` | false | - | The type of the Kubernetes Secret. Can be either `Opaque` or `kubernetes.io/dockerconfigjson`. If the `secretType` is `kubernetes.io/dockerconfigjson`, the `passboltSecretName` field is required. If the `secretType` is `Opaque`, the `secrets` field is required. |
-| `passboltSecretName` | `string` | - | false | `secretType` is `kubernetes.io/dockerconfigjson` | The name of the Passbolt credential that contains the Docker configuration (URI, Username, Password). |
-| `secrets` | `[]Secret` | - | false | `secretType` is `Opaque` | A list of Passbolt credentials that you want to synchronize with Kubernetes Secrets. |
-| `secrets[*].kubernetesSecretKey` | `string` | - | true | - | The key of the Kubernetes Secret that you want to synchronize with the Passbolt credential. |
-| `secrets[*].passboltSecret.name` | `string` | - | true | - | The name of the Passbolt credential that you want to synchronize with Kubernetes Secrets. |
-| `secrets[*].passboltSecret.field` | `string` | - | false | - | The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Can be one of: `username`, `password`, `uri` |
-| `secrets[*].passboltSecret.value` | `string` | - | false | - | A Go template value of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Supported variables are: `Username`, `Password`, `URI`. The `secrets[*].passboltSecret.value` field is mutually exclusive with the `secrets[*].passboltSecret.field` field. |
+| `passboltSecretID` | `string` | - | false | `secretType` is `kubernetes.io/dockerconfigjson` | The ID of the Passbolt credential that contains the Docker configuration (URI, Username, Password). |
+| `passboltSecrets` | `map[string]PassboltSecrets` | - | false | `secretType` is `Opaque` | A mapping of Passbolt credentials that you want to synchronize with Kubernetes Secrets. The key represents the name of the key in the Kubernetes secret to be added. |
+| `passboltSecrets[*].id` | `string` | - | true | - | The ID of the Passbolt credential that you want to synchronize with Kubernetes Secrets. |
+| `passboltSecrets[*].field` | `string` | - | false | - | The field of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Can be one of: `username`, `password`, `uri` |
+| `passboltSecrets[*].value` | `string` | - | false | - | A Go template value of the Passbolt credential that you want to synchronize with Kubernetes Secrets. Supported variables are: `Username`, `Password`, `URI`. The `secrets[*].passboltSecret.value` field is mutually exclusive with the `passboltSecrets[*].field` field. |
+| `plainTextFields` | `map[string]string` | - | false | - | Assignment of plain text fields that you want to synchronize with Kubernetes Secrets. The key represents the name of the key in the Kubernetes secret to be added and the corresponding value. It is not recommended to store "secret" values such as passwords in it. |
 
 The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets. The Passbolt Operator will create a Kubernetes Secret with the name `passbolt-secret-name` in the namespace `default`. The resulting Kubernetes Secret is defined as follows:
 
@@ -205,6 +205,15 @@ When the Passbolt instance is up and running, the second step would be to execut
 ```bash
 make test
 ```
+
+Note:
+
+When we bootstraped passbolt, we created two secrets:
+
+| ID | Name |
+|----|------|
+| `184734ea-8be3-4f5a-ba6c-5f4b3c0603e8` | `APP_EXAMPLE` |
+| `cec328ec-cb1f-48f6-be1e-1ca35fc3c62d` | `APP2_EXAMPLE` |
 
 ### In Cluster Testing (Kind)
 

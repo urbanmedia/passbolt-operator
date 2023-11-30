@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
+	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 )
 
 const (
@@ -129,7 +129,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 		Description    string
 	}
 	type args struct {
-		fieldName passboltv1alpha2.FieldName
+		fieldName passboltv1alpha3.FieldName
 	}
 	tests := []struct {
 		name   string
@@ -148,7 +148,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 				Description:    "Description",
 			},
 			args: args{
-				fieldName: passboltv1alpha2.FieldNamePassword,
+				fieldName: passboltv1alpha3.FieldNamePassword,
 			},
 			want: "Password",
 		},
@@ -163,7 +163,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 				Description:    "Description",
 			},
 			args: args{
-				fieldName: passboltv1alpha2.FieldNameUsername,
+				fieldName: passboltv1alpha3.FieldNameUsername,
 			},
 			want: "Username",
 		},
@@ -178,7 +178,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 				Description:    "Description",
 			},
 			args: args{
-				fieldName: passboltv1alpha2.FieldNameUri,
+				fieldName: passboltv1alpha3.FieldNameUri,
 			},
 			want: "URI",
 		},
@@ -193,7 +193,7 @@ func TestPassboltSecretDefinition_FieldValue(t *testing.T) {
 				Description:    "Description",
 			},
 			args: args{
-				fieldName: passboltv1alpha2.FieldName("abc"),
+				fieldName: passboltv1alpha3.FieldName("abc"),
 			},
 			want: "",
 		},
@@ -382,8 +382,8 @@ func TestClient_GetSecret(t *testing.T) {
 		client *Client
 	}
 	type args struct {
-		ctx  context.Context
-		name string
+		ctx context.Context
+		id  string
 	}
 	tests := []struct {
 		name    string
@@ -409,8 +409,8 @@ func TestClient_GetSecret(t *testing.T) {
 				}(),
 			},
 			args: args{
-				ctx:  context.Background(),
-				name: "APP_EXAMPLE",
+				ctx: context.Background(),
+				id:  "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 			},
 			want: &PassboltSecretDefinition{
 				Name:     "APP_EXAMPLE",
@@ -437,8 +437,8 @@ func TestClient_GetSecret(t *testing.T) {
 				}(),
 			},
 			args: args{
-				ctx:  context.Background(),
-				name: "example",
+				ctx: context.Background(),
+				id:  "example",
 			},
 			want:    nil,
 			wantErr: true,
@@ -454,7 +454,7 @@ func TestClient_GetSecret(t *testing.T) {
 				return
 			}
 
-			got, err := c.GetSecret(tt.args.ctx, tt.args.name)
+			got, err := c.GetSecret(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Client.GetSecret() error = %v, wantErr %v\nCache data:\n%+v", err, tt.wantErr, tt.fields.client.secretCache)
 				return

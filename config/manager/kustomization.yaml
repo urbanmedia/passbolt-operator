@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: tagesspiegel/passbolt-operator
-  newTag: latest
+  newTag: dev
