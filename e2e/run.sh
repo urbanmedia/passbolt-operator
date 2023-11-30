@@ -30,6 +30,10 @@ echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name
 payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.passboltSecrets | length")
 compareLength "3" ${payload_length}
 
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} exists and has the right .data length${NC}"
+payload_length=$(getKubernetesSecret ${secret_name} | jq -r ".data | length")
+compareLength "3" ${payload_length}
+
 ############################
 ########## Test 2 ##########
 ############################
@@ -53,6 +57,10 @@ echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name
 payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.passboltSecrets | length")
 compareLength "4" ${payload_length}
 
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} exists and has the right .data length${NC}"
+payload_length=$(getKubernetesSecret ${secret_name} | jq -r ".data | length")
+compareLength "4" ${payload_length}
+
 ############################
 ########## Test 3 ##########
 ############################
@@ -74,4 +82,8 @@ compareLength "6" ${payload_length}
 api_version="v1alpha3"
 echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
 payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r "(.spec.passboltSecrets | length) + (.spec.plainTextFields | length)")
+compareLength "6" ${payload_length}
+
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} exists and has the right .data length${NC}"
+payload_length=$(getKubernetesSecret ${secret_name} | jq -r ".data | length")
 compareLength "6" ${payload_length}
