@@ -1,51 +1,77 @@
-#!/bin/bash
+#!/bin/bash -e
 
-set -e
+if [ "$DEBUG" == "true" ]; then
+    set -x
+fi
 
-# color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# load lib.sh from the same directory
+source "$(dirname $0)/lib.sh"
 
-function getPassboltSecret() {
-    local apiVersion="${1}"
-    kubectl get \
-        "passboltsecrets.${apiVersion}.passbolt.tagesspiegel.de" \
-        "passboltsecret-sample-${apiVersion}" \
-        -o json
-}
+############################
+########## Test 3 ##########
+############################
+api_version="v1alpha1"
+echo -e "${color_magenta}1: Testing API version: ${api_version}${color_reset}"
+secret_name="${api_version}-simple"
+createPassboltSecretV1alpha1 ${secret_name}
 
-function isSyncStatusSuccess() {
-    local jsonRsp="${1}"
-    local syncStatus=$(echo ${jsonRsp} | jq -r '.status.syncStatus')
-    if [ "${syncStatus}" != "Success" ]; then
-        echo -e "${RED}Sync status is not Success: ${syncStatus}${NC}"
-        exit 1
-    fi
-}
+api_version="v1alpha1"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.secrets | length")
+compareLength "3" ${payload_length}
 
-function isSecretExist() {
-    local jsonRsp="${1}"
-    local secretName=$(echo ${jsonRsp} | jq -r '.metadata.name')
-    echo -e "${BLUE}Checking if secret ${YELLOW}${secretName}${BLUE} exists${NC}"
-    kubectl get secret ${secretName}
-}
+api_version="v1alpha2"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.secrets | length")
+compareLength "3" ${payload_length}
 
-#################
-# Execute tests #
-#################
+api_version="v1alpha3"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.passboltSecrets | length")
+compareLength "3" ${payload_length}
 
-# apiVersions represents a list of API versions to test
-# The list is ordered by priority, the first version is tested first
-# Example: apiVersions="v1alpha1 v1alpha2 v1beta1 ..."
-apiVersions="v1alpha1 v1alpha2"
+############################
+########## Test 2 ##########
+############################
+api_version="v1alpha2"
+echo -e "${color_magenta}2: Testing API version: ${api_version}${color_reset}"
+secret_name="${api_version}-simple"
+createPassboltSecretV1alpha2 ${secret_name}
 
-for apiVersion in ${apiVersions}; do
-    echo -e "${BLUE}Testing API version: ${YELLOW}${apiVersion}${NC}"
-    jsonRsp=$(getPassboltSecret ${apiVersion})
-    isSyncStatusSuccess "${jsonRsp}"
-    isSecretExist "${jsonRsp}"
-    echo -e "${GREEN}Tests passed for version ${YELLOW}${apiVersion}${NC}"
-done
+api_version="v1alpha1"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.secrets | length")
+compareLength "3" ${payload_length}
+
+api_version="v1alpha2"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.secrets | length")
+compareLength "4" ${payload_length}
+
+api_version="v1alpha3"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.passboltSecrets | length")
+compareLength "4" ${payload_length}
+
+############################
+########## Test 3 ##########
+############################
+api_version="v1alpha3"
+echo -e "${color_magenta}3: Testing API version: ${api_version}${color_reset}"
+secret_name="${api_version}-simple"
+createPassboltSecretV1alpha3 ${secret_name}
+
+api_version="v1alpha1"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.secrets | length")
+compareLength "3" ${payload_length}
+
+api_version="v1alpha2"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.secrets | length")
+compareLength "6" ${payload_length}
+
+api_version="v1alpha3"
+echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r "(.spec.passboltSecrets | length) + (.spec.plainTextFields | length)")
+compareLength "6" ${payload_length}
