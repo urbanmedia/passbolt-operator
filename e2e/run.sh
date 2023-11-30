@@ -8,7 +8,7 @@ fi
 source "$(dirname $0)/lib.sh"
 
 ############################
-########## Test 3 ##########
+########## Test 1 ##########
 ############################
 api_version="v1alpha1"
 echo -e "${color_magenta}1: Testing API version: ${api_version}${color_reset}"
