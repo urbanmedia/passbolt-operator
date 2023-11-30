@@ -44,6 +44,10 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 			}
 			secret.Data = dockerConfigJson
 		case corev1.SecretTypeOpaque:
+			for key, value := range pbscrt.Spec.PlainTextFields {
+				secret.Data[key] = []byte(value)
+			}
+
 			// iterate over all secrets and get secret from passbolt
 			for secretKeyName, pbSecret := range pbscrt.Spec.PassboltSecrets {
 				secretData, err := clnt.GetSecret(ctx, pbSecret.ID)

@@ -331,6 +331,60 @@ func TestUpdateSecret(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "secret type opaque with plain text value",
+			args: args{
+				ctx:    context.Background(),
+				clnt:   client,
+				scheme: scheme,
+				pbscrt: &passboltv1alpha3.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: passboltv1alpha3.PassboltSecretSpec{
+						SecretType: corev1.SecretTypeOpaque,
+						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+							"test": {
+								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
+								Field: passboltv1alpha3.FieldNameUsername,
+							},
+						},
+						PlainTextFields: map[string]string{
+							"foo": "bar",
+						},
+					},
+				},
+				secret: &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Type: corev1.SecretTypeOpaque,
+				},
+			},
+			want: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							Kind:               "PassboltSecret",
+							Name:               "test",
+							Controller:         func() *bool { b := true; return &b }(),
+							BlockOwnerDeletion: func() *bool { b := true; return &b }(),
+						},
+					},
+				},
+				Type: corev1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					"test": []byte(`admin`),
+					"foo":  []byte(`bar`),
+				},
+			},
+			wantErr: false,
+		},
+		{
 			name: "secret field and templating not set",
 			args: args{
 				ctx:    context.Background(),
