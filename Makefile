@@ -82,8 +82,6 @@ dev: docker-build kind-load deps install deploy ## Build, load container image t
 
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests.
-	kubectl apply -k config/samples/
-	sleep ${E2E_APPLY_WAIT_DURATION}
 	./e2e/run.sh
 
 .PHONE: kind-load
