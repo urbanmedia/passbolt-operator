@@ -28,7 +28,7 @@ type PassboltSecretSpec struct {
 	// LeaveOnDelete defines if the secret should be deleted from Kubernetes when the PassboltSecret is deleted.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=true
-	LeaveOnDelete bool `json:"leaveOnDelete,omitempty"`
+	LeaveOnDelete bool `json:"leaveOnDelete"`
 	// Secrets is a list of secrets to be fetched from passbolt.
 	// +kubebuilder:validation:Required
 	Secrets []SecretSpec `json:"secrets"`
