@@ -74,6 +74,7 @@ spec:
         field: uri
 EOF
 )"
+    sleep 5
 }
 
 # createPassboltSecretV1alpha2 <name>
@@ -105,6 +106,7 @@ spec:
         value: postgres://{{.Username}}@{{.URI}}/passbolt?sslmode=disable&password={{.Password}}&connect_timeout=10
 EOF
 )"
+    sleep 5
 }
 
 # createPassboltSecretV1alpha3 <name>
@@ -135,4 +137,5 @@ spec:
     foo: bar
 EOF
 )"
+    sleep 5
 }
