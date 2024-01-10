@@ -50,33 +50,6 @@ function compareLength() {
     echo -e "${color_green}OK${color_reset}"
 }
 
-# createPassboltSecretV1alpha1 <name>
-function createPassboltSecretV1alpha1() {
-    createPassboltSecret "$(cat <<EOF
-apiVersion: passbolt.tagesspiegel.de/v1alpha1
-kind: PassboltSecret
-metadata:
-  name: ${1}
-spec:
-  leaveOnDelete: false
-  secrets:
-    - kubernetesSecretKey: s3_access_key
-      passboltSecret:
-        name: APP_EXAMPLE
-        field: username
-    - kubernetesSecretKey: s3_secret_key
-      passboltSecret:
-        name: APP_EXAMPLE
-        field: password
-    - kubernetesSecretKey: s3_endpoint
-      passboltSecret:
-        name: APP_EXAMPLE
-        field: uri
-EOF
-)"
-    sleep 5
-}
-
 # createPassboltSecretV1alpha2 <name>
 function createPassboltSecretV1alpha2() {
     createPassboltSecret "$(cat <<EOF

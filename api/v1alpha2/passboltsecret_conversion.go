@@ -33,7 +33,7 @@ var (
 
 // ConvertTo converts this CronJob to the Hub version (v1alpha2).
 func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
-	passboltsecretlog.V(100).Info("converting PassboltSecret v1alpha1 to v1alpha2")
+	passboltsecretlog.V(100).Info("converting PassboltSecret v1alpha2 to v1alpha3")
 	dst := dstRaw.(*v1alpha3.PassboltSecret)
 	dst.ObjectMeta = src.ObjectMeta
 	src.Spec.LeaveOnDelete = dst.Spec.LeaveOnDelete
@@ -80,7 +80,7 @@ func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
 
 // ConvertFrom converts from the Hub version (v1alpha2) to this version.
 func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
-	passboltsecretlog.V(100).Info("converting from PassboltSecret v1alpha2 to v1alpha1")
+	passboltsecretlog.V(100).Info("converting from PassboltSecret v1alpha3 to v1alpha2")
 	src := srcRaw.(*v1alpha3.PassboltSecret)
 	dst.ObjectMeta = src.ObjectMeta
 	dst.Spec.LeaveOnDelete = src.Spec.LeaveOnDelete

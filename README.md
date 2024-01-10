@@ -146,7 +146,7 @@ mysql \
 Kubebuilder allows you to bootstrap a new API Version. To do so, you need to run the following command:
 
 ```bash
-kubebuilder create api --group passbolt --version v1alpha1 --kind PassboltSecret
+kubebuilder create api --group passbolt --version v1alpha3 --kind PassboltSecret
 ```
 
 ### Create validation and defaulting webhooks
@@ -154,7 +154,7 @@ kubebuilder create api --group passbolt --version v1alpha1 --kind PassboltSecret
 Kubebuilder allows you to bootstrap a new webhook. To do so, you need to run the following command:
 
 ```bash
-kubebuilder create webhook --group passbolt --version v1alpha1 --kind PassboltSecret --defaulting --programmatic-validation
+kubebuilder create webhook --group passbolt --version v1alpha3 --kind PassboltSecret --defaulting --programmatic-validation
 ```
 
 ### Start the Operator
