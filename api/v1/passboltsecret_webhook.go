@@ -48,7 +48,7 @@ func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-passbolt-tagesspiegel-de-v1-passboltsecret,mutating=true,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1,name=mpassboltsecret.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-passbolt-tagesspiegel-de-v1-passboltsecret,mutating=true,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1,name=mpassboltsecret.tagesspiegel.de,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &PassboltSecret{}
 
@@ -60,7 +60,7 @@ func (r *PassboltSecret) Default() {
 	}
 }
 
-//+kubebuilder:webhook:path=/validate-passbolt-tagesspiegel-de-v1-passboltsecret,mutating=false,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1,name=vpassboltsecret.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-passbolt-tagesspiegel-de-v1-passboltsecret,mutating=false,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1,name=vpassboltsecret.tagesspiegel.de,admissionReviewVersions=v1
 
 var _ webhook.Validator = &PassboltSecret{}
 

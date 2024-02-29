@@ -12,32 +12,12 @@ webhooks:
       namespace: system
       path: /mutate-passbolt-tagesspiegel-de-v1-passboltsecret
   failurePolicy: Fail
-  name: mpassboltsecret.kb.io
-  rules:
-  - apiGroups:
-    - passbolt.tagesspiegel.de
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - passboltsecrets
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-passbolt-tagesspiegel-de-v1alpha3-passboltsecret
-  failurePolicy: Fail
   name: mpassboltsecret.tagesspiegel.de
   rules:
   - apiGroups:
     - passbolt.tagesspiegel.de
     apiVersions:
-    - v1alpha3
+    - v1
     operations:
     - CREATE
     - UPDATE
@@ -58,32 +38,12 @@ webhooks:
       namespace: system
       path: /validate-passbolt-tagesspiegel-de-v1-passboltsecret
   failurePolicy: Fail
-  name: vpassboltsecret.kb.io
-  rules:
-  - apiGroups:
-    - passbolt.tagesspiegel.de
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - passboltsecrets
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-passbolt-tagesspiegel-de-v1alpha3-passboltsecret
-  failurePolicy: Fail
   name: vpassboltsecret.tagesspiegel.de
   rules:
   - apiGroups:
     - passbolt.tagesspiegel.de
     apiVersions:
-    - v1alpha3
+    - v1
     operations:
     - CREATE
     - UPDATE
