@@ -32,6 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
@@ -201,12 +203,16 @@ var _ = BeforeSuite(func() {
 	// setup manager and webhook server
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme.Scheme,
-		Host:               webhookInstallOptions.LocalServingHost,
-		Port:               webhookInstallOptions.LocalServingPort,
-		CertDir:            webhookInstallOptions.LocalServingCertDir,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
+		Scheme: scheme.Scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+		LeaderElection: false,
 	})
 	Expect(err).ToNot(HaveOccurred())
 
