@@ -11,7 +11,7 @@ This repository contains the Kubernetes Operator for Passbolt. Passbolt is an op
 The Passbolt Operator allows you to synchronize your Passbolt credentials with Kubernetes Secrets. To do so, you need to create a `PassboltSecret` resource. The `PassboltSecret` resource is a Kubernetes Custom Resource Definition (CRD) that allows you to define the Passbolt credentials that you want to synchronize with Kubernetes Secrets. The Passbolt Operator will then synchronize the Passbolt credentials with Kubernetes Secrets.
 
 ```yaml
-apiVersion: passbolt.tagesspiegel.de/v1alpha3
+apiVersion: passbolt.tagesspiegel.de/v1
 kind: PassboltSecret
 metadata:
   name: passboltsecret-sample
@@ -146,7 +146,7 @@ mysql \
 Kubebuilder allows you to bootstrap a new API Version. To do so, you need to run the following command:
 
 ```bash
-kubebuilder create api --group passbolt --version v1alpha3 --kind PassboltSecret
+kubebuilder create api --group passbolt --version v1 --kind PassboltSecret
 ```
 
 ### Create validation and defaulting webhooks
@@ -154,7 +154,7 @@ kubebuilder create api --group passbolt --version v1alpha3 --kind PassboltSecret
 Kubebuilder allows you to bootstrap a new webhook. To do so, you need to run the following command:
 
 ```bash
-kubebuilder create webhook --group passbolt --version v1alpha3 --kind PassboltSecret --defaulting --programmatic-validation
+kubebuilder create webhook --group passbolt --version v1 --kind PassboltSecret --defaulting --programmatic-validation
 ```
 
 ### Start the Operator
