@@ -60,7 +60,7 @@ jobs:
           go-version: ${{ env.go_version }}
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v4
         with:
           version: latest
           args: --timeout=3m --issues-exit-code=1 ./...
