@@ -256,7 +256,7 @@ jobs:
           make docker-load
 
       - name: Create K8s Kind Cluster
-        uses: helm/kind-action@v1.8.0
+        uses: helm/kind-action@v1.9.0
         with:
           node_image: ${{ matrix.kind_node_image }}
           cluster_name: passbolt-operator-e2e
