@@ -36,6 +36,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	"github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
@@ -61,6 +62,7 @@ func init() {
 
 	utilruntime.Must(passboltv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(passboltv1alpha3.AddToScheme(scheme))
+	utilruntime.Must(passboltv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -214,12 +216,8 @@ func main() {
 		os.Exit(1)
 	}
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&passboltv1alpha2.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha2")
-			os.Exit(1)
-		}
-		if err = (&passboltv1alpha3.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret", "version", "v1alpha3")
+		if err = (&passboltv1.PassboltSecret{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "PassboltSecret")
 			os.Exit(1)
 		}
 	}
