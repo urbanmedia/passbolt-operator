@@ -14,16 +14,124 @@ limitations under the License.
 package v1alpha2
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
+	"fmt"
+
+	v1 "github.com/urbanmedia/passbolt-operator/api/v1"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // log is for logging in this package.
 var passboltsecretlog = logf.Log.WithName("passboltsecret-resource")
 
-func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	passboltsecretlog.V(100).Info("setting up webhook")
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
+var (
+	// GetByID is a function that returns the name of a secret by its ID.
+	GetSecretID func(name string) (string, error) = nil
+	// GetBySecretName is a function that returns the ID of a secret by its name.
+	GetSecretName func(id string) (string, error) = nil
+)
+
+// ConvertTo converts this PassboltSecret to the Hub version (v1).
+func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
+	passboltsecretlog.V(100).Info("converting PassboltSecret v1alpha2 to v1")
+	dst := dstRaw.(*v1.PassboltSecret)
+	dst.ObjectMeta = src.ObjectMeta
+	src.Spec.LeaveOnDelete = dst.Spec.LeaveOnDelete
+	dst.Spec.SecretType = src.Spec.SecretType
+
+	// migrate secrets of type Opaque
+	if src.Spec.SecretType == corev1.SecretTypeOpaque {
+		dst.Spec.PassboltSecrets = make(map[string]v1.PassboltSecretRef)
+		for i, s := range src.Spec.Secrets {
+			pbID, err := GetSecretID(s.PassboltSecret.Name)
+			if err != nil {
+				return fmt.Errorf("error migrating secret %s at index %d: %w", s.PassboltSecret.Name, i, err)
+			}
+			dst.Spec.PassboltSecrets[s.KubernetesSecretKey] = v1.PassboltSecretRef{
+				ID:    pbID,
+				Field: v1.FieldName(s.PassboltSecret.Field),
+				Value: s.PassboltSecret.Value,
+			}
+		}
+	}
+
+	// migrate secrets of type kubernetes.io/dockerconfigjson
+	if src.Spec.SecretType == corev1.SecretTypeDockerConfigJson {
+		pbID, err := GetSecretID(*src.Spec.PassboltSecretName)
+		if err != nil {
+			return fmt.Errorf("error migrating secret %s in namespace %s: %w", src.GetName(), src.GetNamespace(), err)
+		}
+		dst.Spec.PassboltSecretID = &pbID
+	}
+
+	dst.Status.LastSync = src.Status.LastSync
+	dst.Status.SyncStatus = v1.SyncStatus(src.Status.SyncStatus)
+	dst.Status.SyncErrors = make([]v1.SyncError, len(src.Status.SyncErrors))
+	for _, se := range src.Status.SyncErrors {
+		dst.Status.SyncErrors = append(dst.Status.SyncErrors, v1.SyncError{
+			Message:          se.Message,
+			PassboltSecretID: se.SecretName,
+			SecretKey:        se.SecretKey,
+			Time:             se.Time,
+		})
+	}
+	return nil
+}
+
+// ConvertFrom converts from the Hub version (v1alpha2) to this version.
+func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
+	passboltsecretlog.V(100).Info("converting from PassboltSecret v1 to v1alpha2")
+	src := srcRaw.(*v1.PassboltSecret)
+	dst.ObjectMeta = src.ObjectMeta
+	dst.Spec.LeaveOnDelete = src.Spec.LeaveOnDelete
+	dst.Spec.SecretType = src.Spec.SecretType
+
+	if src.Spec.SecretType == corev1.SecretTypeOpaque {
+		dst.Spec.Secrets = []SecretSpec{}
+		for i, s := range src.Spec.PassboltSecrets {
+			id, err := GetSecretName(s.ID)
+			if err != nil {
+				return fmt.Errorf("error migrating secret %s at index %s: %w", s.ID, i, err)
+			}
+			dst.Spec.Secrets = append(dst.Spec.Secrets, SecretSpec{
+				KubernetesSecretKey: i,
+				PassboltSecret: PassboltSpec{
+					Name:  id,
+					Field: FieldName(s.Field),
+					Value: s.Value,
+				},
+			})
+		}
+		for i, s := range src.Spec.PlainTextFields {
+			dst.Spec.Secrets = append(dst.Spec.Secrets, SecretSpec{
+				KubernetesSecretKey: i,
+				PassboltSecret: PassboltSpec{
+					Name:  i,
+					Value: &s,
+				},
+			})
+		}
+	}
+
+	if src.Spec.SecretType == corev1.SecretTypeDockerConfigJson {
+		name, err := GetSecretName(*src.Spec.PassboltSecretID)
+		if err != nil {
+			return fmt.Errorf("error migrating secret %s: %w", *src.Spec.PassboltSecretID, err)
+		}
+		dst.Spec.PassboltSecretName = &name
+	}
+
+	dst.Status.LastSync = src.Status.LastSync
+	dst.Status.SyncStatus = SyncStatus(src.Status.SyncStatus)
+	dst.Status.SyncErrors = make([]SyncError, len(src.Status.SyncErrors))
+	for _, se := range src.Status.SyncErrors {
+		dst.Status.SyncErrors = append(dst.Status.SyncErrors, SyncError{
+			Message:    se.Message,
+			SecretName: se.PassboltSecretID,
+			SecretKey:  se.SecretKey,
+			Time:       se.Time,
+		})
+	}
+	return nil
 }
