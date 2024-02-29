@@ -121,8 +121,9 @@ type PassboltSecretStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.syncStatus`
-// +kubebuilder:printcolumn:name="Last Sync",type=string,JSONPath=`.status.lastSync`
+//+kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.syncStatus`
+//+kubebuilder:printcolumn:name="Last Sync",type=string,JSONPath=`.status.lastSync`
+//+kubebuilder:deprecatedversion:warning=This version is deprecated. Use v1alpha3 instead.
 
 // PassboltSecret is the Schema for the passboltsecrets API
 type PassboltSecret struct {
