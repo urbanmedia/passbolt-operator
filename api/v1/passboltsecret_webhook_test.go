@@ -1,5 +1,5 @@
 /*
-Copyright 2023 Verlag der Tagesspiegel GmbH.
+Copyright 2024 Verlag der Tagesspiegel GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
