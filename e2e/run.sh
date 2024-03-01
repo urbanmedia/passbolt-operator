@@ -76,7 +76,7 @@ compareLength "6" ${payload_length}
 
 api_version="v1alpha3"
 echo -e "${color_blue}Checking if Kubernetes secret ${color_yellow}${secret_name}${color_blue} in version ${color_yellow}${api_version}${color_blue} exists${NC}"
-payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r ".spec.secrets | length")
+payload_length=$(getPassboltSecret ${secret_name} ${api_version} | jq -r "(.spec.passboltSecrets | length) + (.spec.plainTextFields | length)")
 compareLength "6" ${payload_length}
 
 api_version="v1"
