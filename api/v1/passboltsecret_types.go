@@ -1,5 +1,5 @@
 /*
-Copyright 2023 Verlag der Tagesspiegel GmbH.
+Copyright 2024 Verlag der Tagesspiegel GmbH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha2
+package v1
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ type PassboltSecretSpec struct {
 	// LeaveOnDelete defines if the secret should be deleted from Kubernetes when the PassboltSecret is deleted.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=true
-	LeaveOnDelete bool `json:"leaveOnDelete,omitempty"`
+	LeaveOnDelete bool `json:"leaveOnDelete"`
 	// SecretType is the type of the secret. Defaults to Opaque.
 	// If set to kubernetes.io/dockerconfigjson, the secret will be created as a docker config secret.
 	// We also expect the PassboltSecretName to be set in this case.
@@ -39,22 +39,17 @@ type PassboltSecretSpec struct {
 	// +kubebuilder:default=Opaque
 	// +kubebuilder:validation:Enum=Opaque;kubernetes.io/dockerconfigjson
 	SecretType corev1.SecretType `json:"secretType,omitempty"`
-	// PassboltSecretName is the name of the passbolt secret name to be used as a docker config secret.
+	// PassboltSecretID is the ID of the passbolt secret to be used as a docker config secret.
 	// +kubebuilder:validation:Optional
-	PassboltSecretName *string `json:"passboltSecretName,omitempty"`
-	// Secrets is a list of secrets to be fetched from passbolt.
-	// +kubebuilder:validation:Optional
-	Secrets []SecretSpec `json:"secrets,omitempty"`
-}
+	PassboltSecretID *string `json:"passboltSecretID,omitempty"`
 
-// SecretSpec defines the secret mapping between passbolt and kubernetes.
-type SecretSpec struct {
-	// Name of the secret in passbolt
-	// +kubebuilder:validation:Required
-	PassboltSecret PassboltSpec `json:"passboltSecret"`
-	// KubernetesSecretKey is the key in the kubernetes secret where the passbolt secret will be stored.
-	// +kubebuilder:validation:Required
-	KubernetesSecretKey string `json:"kubernetesSecretKey"`
+	// PassboltSecrets is a map of string (key in K8s secret) and struct that contains the reference to the secret in passbolt.
+	// +kubebuilder:validation:Optional
+	PassboltSecrets map[string]PassboltSecretRef `json:"passboltSecrets,omitempty"`
+
+	// PlainTextFields is a map of string (key in K8s secret) and string (value in K8s secret).
+	// +kubebuilder:validation:Optional
+	PlainTextFields map[string]string `json:"plainTextFields,omitempty"`
 }
 
 type FieldName string
@@ -65,10 +60,10 @@ const (
 	FieldNameUri      FieldName = "uri"
 )
 
-type PassboltSpec struct {
+type PassboltSecretRef struct {
 	// Name of the secret in passbolt
 	// +kubebuilder:validation:Required
-	Name string `json:"name"`
+	ID string `json:"id"`
 	// Field is the field in the passbolt secret to be read.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=username;password;uri
@@ -94,8 +89,8 @@ const (
 type SyncError struct {
 	// Message is the error message.
 	Message string `json:"message"`
-	// SecretName is the name of the secret that failed to sync.
-	SecretName string `json:"secretName"`
+	// PassboltSecretID is the name of the secret that failed to sync.
+	PassboltSecretID string `json:"passboltSecretID"`
 	// SecretKey is the key of the secret that failed to sync.
 	SecretKey string `json:"secretKey"`
 	// Time is the time the error occurred.
@@ -103,7 +98,7 @@ type SyncError struct {
 }
 
 func (s SyncError) Error() string {
-	return fmt.Sprintf("failed to sync secret %s/%s: %s", s.SecretName, s.SecretKey, s.Message)
+	return fmt.Sprintf("failed to sync secret %s/%s: %s", s.PassboltSecretID, s.SecretKey, s.Message)
 }
 
 // PassboltSecretStatus defines the observed state of PassboltSecret
@@ -121,9 +116,9 @@ type PassboltSecretStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:storageversion
 //+kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.syncStatus`
 //+kubebuilder:printcolumn:name="Last Sync",type=string,JSONPath=`.status.lastSync`
-//+kubebuilder:deprecatedversion:warning=This version is deprecated. Use v1alpha3 instead.
 
 // PassboltSecret is the Schema for the passboltsecrets API
 type PassboltSecret struct {
@@ -133,6 +128,9 @@ type PassboltSecret struct {
 	Spec   PassboltSecretSpec   `json:"spec,omitempty"`
 	Status PassboltSecretStatus `json:"status,omitempty"`
 }
+
+// Hub marks this type as a conversion hub.
+func (*PassboltSecret) Hub() {}
 
 //+kubebuilder:object:root=true
 

@@ -20,14 +20,17 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	//ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-/*
-func TestPassboltSecret_SetupWebhookWithManager(t *testing.T) {
+func TestMain(m *testing.M) {
+	m.Run()
+}
+
+func TestPassboltSecret_ConvertTo(t *testing.T) {
 	type fields struct {
 		TypeMeta   metav1.TypeMeta
 		ObjectMeta metav1.ObjectMeta
@@ -35,1083 +38,345 @@ func TestPassboltSecret_SetupWebhookWithManager(t *testing.T) {
 		Status     PassboltSecretStatus
 	}
 	type args struct {
-		mgr ctrl.Manager
+		dstRaw conversion.Hub
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
+		want    conversion.Hub
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "convert to v1alpha3 opaque",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete: false,
+					SecretType:    corev1.SecretTypeOpaque,
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"amqp_dsn": {
+							ID:    "example-id",
+							Field: FieldNameUsername,
+						},
+					},
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			args: args{
+				dstRaw: &passboltv1.PassboltSecret{},
+			},
+			want: &passboltv1.PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: passboltv1.PassboltSecretSpec{
+					LeaveOnDelete: false,
+					SecretType:    corev1.SecretTypeOpaque,
+					PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
+						"amqp_dsn": {
+							ID:    "example-id",
+							Field: passboltv1.FieldNameUsername,
+						},
+					},
+				},
+				Status: passboltv1.PassboltSecretStatus{
+					SyncErrors: []passboltv1.SyncError{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "convert to v1alpha3 dockerconfigjson",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete:    false,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "example-id"; return &s }(),
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			args: args{
+				dstRaw: &passboltv1.PassboltSecret{},
+			},
+			want: &passboltv1.PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: passboltv1.PassboltSecretSpec{
+					LeaveOnDelete:    false,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "example-id"; return &s }(),
+				},
+				Status: passboltv1.PassboltSecretStatus{
+					SyncErrors: []passboltv1.SyncError{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "convert to v1alpha3 with value set",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete: false,
+					SecretType:    corev1.SecretTypeOpaque,
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"amqp_dsn": {
+							ID:    "example-id",
+							Value: func() *string { s := "{{.Username}}"; return &s }(),
+						},
+					},
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			args: args{
+				dstRaw: &passboltv1.PassboltSecret{},
+			},
+			want: &passboltv1.PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: passboltv1.PassboltSecretSpec{
+					LeaveOnDelete: false,
+					SecretType:    corev1.SecretTypeOpaque,
+					PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
+						"amqp_dsn": {
+							ID:    "example-id",
+							Value: func() *string { s := "{{.Username}}"; return &s }(),
+						},
+					},
+				},
+				Status: passboltv1.PassboltSecretStatus{
+					SyncErrors: []passboltv1.SyncError{},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &PassboltSecret{
+			src := &PassboltSecret{
 				TypeMeta:   tt.fields.TypeMeta,
 				ObjectMeta: tt.fields.ObjectMeta,
 				Spec:       tt.fields.Spec,
 				Status:     tt.fields.Status,
 			}
-			if err := r.SetupWebhookWithManager(tt.args.mgr); (err != nil) != tt.wantErr {
-				t.Errorf("PassboltSecret.SetupWebhookWithManager() error = %v, wantErr %v", err, tt.wantErr)
+			got := tt.args.dstRaw
+			if err := src.ConvertTo(got); (err != nil) != tt.wantErr {
+				t.Errorf("PassboltSecret.ConvertTo() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-		})
-	}
-}
-*/
 
-func TestPassboltSecret_Default(t *testing.T) {
-	type fields struct {
-		TypeMeta   metav1.TypeMeta
-		ObjectMeta metav1.ObjectMeta
-		Spec       PassboltSecretSpec
-		Status     PassboltSecretStatus
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   PassboltSecret
-	}{
-		{
-			name: "secret type not set",
-			fields: fields{
-				TypeMeta: metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec:   PassboltSecretSpec{},
-				Status: PassboltSecretStatus{},
-			},
-			want: PassboltSecret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeOpaque,
-				},
-			},
-		},
-		{
-			name: "secret type is opaque",
-			fields: fields{
-				TypeMeta: metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeOpaque,
-				},
-				Status: PassboltSecretStatus{},
-			},
-			want: PassboltSecret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeOpaque,
-				},
-			},
-		},
-		{
-			name: "secret type is SecretTypeDockerConfigJson",
-			fields: fields{
-				TypeMeta: metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeDockerConfigJson,
-				},
-				Status: PassboltSecretStatus{},
-			},
-			want: PassboltSecret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeDockerConfigJson,
-				},
-			},
-		},
-		{
-			name: "secret type is SecretTypeTLS",
-			fields: fields{
-				TypeMeta: metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeTLS,
-				},
-				Status: PassboltSecretStatus{},
-			},
-			want: PassboltSecret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeOpaque,
-				},
-			},
-		},
-		{
-			name: "secret type is SecretTypeBasicAuth",
-			fields: fields{
-				TypeMeta: metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeBasicAuth,
-				},
-				Status: PassboltSecretStatus{},
-			},
-			want: PassboltSecret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: PassboltSecretSpec{
-					SecretType: corev1.SecretTypeOpaque,
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &PassboltSecret{
-				TypeMeta:   tt.fields.TypeMeta,
-				ObjectMeta: tt.fields.ObjectMeta,
-				Spec:       tt.fields.Spec,
-				Status:     tt.fields.Status,
-			}
-			r.Default()
-			if diff := cmp.Diff(*r, tt.want); diff != "" {
-				t.Errorf("PassboltSecret.Default() diff = %s", diff)
+			diff := cmp.Diff(tt.want, got)
+			if diff != "" {
+				t.Errorf("PassboltSecret.ConvertTo() (-want, +got) = %v", diff)
+				return
 			}
 		})
 	}
 }
 
-func TestPassboltSecret_validatePassboltSecret(t *testing.T) {
-	type fields struct {
-		TypeMeta   metav1.TypeMeta
-		ObjectMeta metav1.ObjectMeta
-		Spec       PassboltSecretSpec
-		Status     PassboltSecretStatus
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		// opaque secret
-		{
-			name: "valid Opaque secret field name is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							ID:    "",
-							Field: "FieldNamePassword",
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "valid Opaque secret value is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							ID:    "",
-							Value: func() *string { s := "host={{.URI}}"; return &s }(),
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "invalid Opaque secret passboltSecretName set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecretID: func() *string {
-						s := "test"
-						return &s
-					}(),
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							ID:    "",
-							Field: "FieldNamePassword",
-						},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret length of secrets is 0",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:   true,
-					SecretType:      corev1.SecretTypeOpaque,
-					PassboltSecrets: make(map[string]PassboltSecretRef),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret field or value is not set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret field and value is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Field: "FieldNamePassword",
-							Value: func() *string { s := "host={{.URI}}"; return &s }(),
-						},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		// dockerconfigjson secret
-		{
-			name: "valid DockerConfigJson secret",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := "test"; return &s }(),
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "invalid DockerConfigJson secret PassboltSecretName is not set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeDockerConfigJson,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid DockerConfigJson secret PassboltSecretName is empty",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := ""; return &s }(),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid DockerConfigJson secret secrets is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := "as"; return &s }(),
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		// unsupported secret type
-		{
-			name: "invalid secret type SecretTypeBasicAuth",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeBasicAuth,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeBootstrapToken",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeBootstrapToken,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeDockercfg",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeDockercfg,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeSSHAuth",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeSSHAuth,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeServiceAccountToken",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeServiceAccountToken,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeTLS",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeTLS,
-				},
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &PassboltSecret{
-				TypeMeta:   tt.fields.TypeMeta,
-				ObjectMeta: tt.fields.ObjectMeta,
-				Spec:       tt.fields.Spec,
-				Status:     tt.fields.Status,
-			}
-			if err := r.validatePassboltSecret(); (err != nil) != tt.wantErr {
-				t.Errorf("PassboltSecret.validatePassboltSecret() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestPassboltSecret_ValidateCreate(t *testing.T) {
-	type fields struct {
-		TypeMeta   metav1.TypeMeta
-		ObjectMeta metav1.ObjectMeta
-		Spec       PassboltSecretSpec
-		Status     PassboltSecretStatus
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		// opaque secret
-		{
-			name: "valid Opaque secret field name is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							ID:    "",
-							Field: FieldNamePassword,
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "valid Opaque secret value is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							ID:    "",
-							Value: func() *string { s := "host={{.URI}}"; return &s }(),
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "invalid Opaque secret passboltSecretName set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecretID: func() *string {
-						s := "test"
-						return &s
-					}(),
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							ID:    "",
-							Field: FieldNamePassword,
-						},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret length of secrets is 0",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:   true,
-					SecretType:      corev1.SecretTypeOpaque,
-					PassboltSecrets: make(map[string]PassboltSecretRef),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret field or value is not set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret field and value is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Field: FieldNamePassword,
-							Value: func() *string { s := "host={{.URI}}"; return &s }(),
-						},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		// dockerconfigjson secret
-		{
-			name: "valid DockerConfigJson secret",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := "test"; return &s }(),
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "invalid DockerConfigJson secret PassboltSecretName is not set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeDockerConfigJson,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid DockerConfigJson secret PassboltSecretName is empty",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := ""; return &s }(),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid DockerConfigJson secret secrets is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := "as"; return &s }(),
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"asd": PassboltSecretRef{},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		// unsupported secret type
-		{
-			name: "invalid secret type SecretTypeBasicAuth",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeBasicAuth,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeBootstrapToken",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeBootstrapToken,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeDockercfg",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeDockercfg,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeSSHAuth",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeSSHAuth,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeServiceAccountToken",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeServiceAccountToken,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeTLS",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeTLS,
-				},
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &PassboltSecret{
-				TypeMeta:   tt.fields.TypeMeta,
-				ObjectMeta: tt.fields.ObjectMeta,
-				Spec:       tt.fields.Spec,
-				Status:     tt.fields.Status,
-			}
-			if _, err := r.ValidateCreate(); (err != nil) != tt.wantErr {
-				t.Errorf("PassboltSecret.ValidateCreate() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestPassboltSecret_ValidateUpdate(t *testing.T) {
-	type fields struct {
-		TypeMeta   metav1.TypeMeta
-		ObjectMeta metav1.ObjectMeta
-		Spec       PassboltSecretSpec
-		Status     PassboltSecretStatus
-	}
+func TestPassboltSecret_ConvertFrom(t *testing.T) {
 	type args struct {
-		old runtime.Object
+		srcRaw conversion.Hub
 	}
 	tests := []struct {
 		name    string
-		fields  fields
 		args    args
+		want    *PassboltSecret
 		wantErr bool
 	}{
-		// opaque secret
 		{
-			name: "valid Opaque secret field name is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Field: FieldNamePassword,
+			name: "convert from v1alpha3 with field name",
+			args: args{
+				srcRaw: &passboltv1.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-passboltsecret",
+						Namespace: "default",
+					},
+					Spec: passboltv1.PassboltSecretSpec{
+						LeaveOnDelete: false,
+						SecretType:    corev1.SecretTypeOpaque,
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
+							"amqp_dsn": {
+								ID:    "example-id",
+								Field: passboltv1.FieldNameUsername,
+							},
+						},
+						PlainTextFields: map[string]string{
+							"pg_dsn": "example-value",
 						},
 					},
+				},
+			},
+			want: &PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete: false,
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"amqp_dsn": {
+							ID:    "example-id",
+							Field: FieldNameUsername,
+						},
+					},
+					PlainTextFields: map[string]string{
+						"pg_dsn": "example-value",
+					},
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "valid Opaque secret value is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Value: func() *string { s := "host={{.URI}}"; return &s }(),
-						},
+			name: "convert from v1alpha3 dockerconfigjson",
+			args: args{
+				srcRaw: &passboltv1.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-passboltsecret",
+						Namespace: "default",
 					},
+					Spec: passboltv1.PassboltSecretSpec{
+						LeaveOnDelete:    false,
+						SecretType:       corev1.DockerConfigJsonKey,
+						PassboltSecretID: func() *string { s := "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8"; return &s }(),
+					},
+				},
+			},
+			want: &PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete:    false,
+					SecretType:       corev1.SecretTypeDockerConfigJson,
+					PassboltSecretID: func() *string { s := "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8"; return &s }(),
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "invalid Opaque secret passboltSecretName set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecretID: func() *string {
-						s := "test"
-						return &s
-					}(),
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Field: FieldNamePassword,
+			name: "convert from v1alpha3 with value",
+			args: args{
+				srcRaw: &passboltv1.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-passboltsecret",
+						Namespace: "default",
+					},
+					Spec: passboltv1.PassboltSecretSpec{
+						LeaveOnDelete: false,
+						SecretType:    corev1.SecretTypeOpaque,
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
+							"amqp_dsn": {
+								ID:    "example-id",
+								Value: func() *string { s := "example-value"; return &s }(),
+							},
+						},
+						PlainTextFields: map[string]string{
+							"pg_dsn": "example-value",
 						},
 					},
 				},
 			},
-			wantErr: true,
+			want: &PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
+				Spec: PassboltSecretSpec{
+					LeaveOnDelete: false,
+					PassboltSecrets: map[string]PassboltSecretRef{
+						"amqp_dsn": {
+							ID:    "example-id",
+							Value: func() *string { s := "example-value"; return &s }(),
+						},
+					},
+					PlainTextFields: map[string]string{
+						"pg_dsn": "example-value",
+					},
+				},
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			name: "invalid Opaque secret length of secrets is 0",
-			fields: fields{
+			name: "convert from v1alpha3 with empty field",
+			args: args{
+				srcRaw: &passboltv1.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-passboltsecret",
+						Namespace: "default",
+					},
+					Spec: passboltv1.PassboltSecretSpec{
+						LeaveOnDelete: false,
+						SecretType:    corev1.SecretTypeOpaque,
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
+							"amqp_dsn": {
+								ID:    "example-id",
+								Field: "",
+							},
+						},
+					},
+				},
+			},
+			want: &PassboltSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-passboltsecret",
+					Namespace: "default",
+				},
 				Spec: PassboltSecretSpec{
-					LeaveOnDelete:   true,
-					SecretType:      corev1.SecretTypeOpaque,
+					LeaveOnDelete:   false,
 					PassboltSecrets: map[string]PassboltSecretRef{},
 				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret field or value is not set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret field and value is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Field: FieldNamePassword,
-							Value: func() *string { s := "host={{.URI}}"; return &s }(),
-						},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		// dockerconfigjson secret
-		{
-			name: "valid DockerConfigJson secret",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := "test"; return &s }(),
+				Status: PassboltSecretStatus{
+					SyncErrors: []SyncError{},
 				},
 			},
 			wantErr: false,
 		},
-		{
-			name: "invalid DockerConfigJson secret PassboltSecretName is not set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeDockerConfigJson,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid DockerConfigJson secret PassboltSecretName is empty",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := ""; return &s }(),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid DockerConfigJson secret secrets is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := "as"; return &s }(),
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"asd": PassboltSecretRef{},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		// unsupported secret type
-		{
-			name: "invalid secret type SecretTypeBasicAuth",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeBasicAuth,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeBootstrapToken",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeBootstrapToken,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeDockercfg",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeDockercfg,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeSSHAuth",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeSSHAuth,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeServiceAccountToken",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeServiceAccountToken,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeTLS",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeTLS,
-				},
-			},
-			wantErr: true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &PassboltSecret{
-				TypeMeta:   tt.fields.TypeMeta,
-				ObjectMeta: tt.fields.ObjectMeta,
-				Spec:       tt.fields.Spec,
-				Status:     tt.fields.Status,
+			got := tt.want
+			if err := got.ConvertFrom(tt.args.srcRaw); (err != nil) != tt.wantErr {
+				t.Errorf("PassboltSecret.ConvertFrom() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			if _, err := r.ValidateUpdate(tt.args.old); (err != nil) != tt.wantErr {
-				t.Errorf("PassboltSecret.ValidateUpdate() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
 
-func TestPassboltSecret_ValidateDelete(t *testing.T) {
-	type fields struct {
-		TypeMeta   metav1.TypeMeta
-		ObjectMeta metav1.ObjectMeta
-		Spec       PassboltSecretSpec
-		Status     PassboltSecretStatus
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		// opaque secret
-		{
-			name: "valid Opaque secret field name is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Field: FieldNamePassword,
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "valid Opaque secret value is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Value: func() *string { s := "host={{.URI}}"; return &s }(),
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "invalid Opaque secret passboltSecretName set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecretID: func() *string {
-						s := "test"
-						return &s
-					}(),
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Field: FieldNamePassword,
-						},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret length of secrets is 0",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:   true,
-					SecretType:      corev1.SecretTypeOpaque,
-					PassboltSecrets: make(map[string]PassboltSecretRef),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret field or value is not set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid Opaque secret field and value is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeOpaque,
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"test": PassboltSecretRef{
-							Field: FieldNamePassword,
-							Value: func() *string { s := "host={{.URI}}"; return &s }(),
-						},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		// dockerconfigjson secret
-		{
-			name: "valid DockerConfigJson secret",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := "test"; return &s }(),
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "invalid DockerConfigJson secret PassboltSecretName is not set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeDockerConfigJson,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid DockerConfigJson secret PassboltSecretName is empty",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := ""; return &s }(),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid DockerConfigJson secret secrets is set",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete:    true,
-					SecretType:       corev1.SecretTypeDockerConfigJson,
-					PassboltSecretID: func() *string { s := "as"; return &s }(),
-					PassboltSecrets: map[string]PassboltSecretRef{
-						"asd": PassboltSecretRef{},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		// unsupported secret type
-		{
-			name: "invalid secret type SecretTypeBasicAuth",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeBasicAuth,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeBootstrapToken",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeBootstrapToken,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeDockercfg",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeDockercfg,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeSSHAuth",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeSSHAuth,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeServiceAccountToken",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeServiceAccountToken,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid secret type SecretTypeTLS",
-			fields: fields{
-				Spec: PassboltSecretSpec{
-					LeaveOnDelete: true,
-					SecretType:    corev1.SecretTypeTLS,
-				},
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &PassboltSecret{
-				TypeMeta:   tt.fields.TypeMeta,
-				ObjectMeta: tt.fields.ObjectMeta,
-				Spec:       tt.fields.Spec,
-				Status:     tt.fields.Status,
-			}
-			if _, err := r.ValidateDelete(); (err != nil) != tt.wantErr {
-				t.Errorf("PassboltSecret.ValidateDelete() error = %v, wantErr %v", err, tt.wantErr)
+			diff := cmp.Diff(tt.want, got)
+			if diff != "" {
+				t.Errorf("PassboltSecret.ConvertFrom() (-want, +got) = %v", diff)
+				return
 			}
 		})
 	}

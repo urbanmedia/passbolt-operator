@@ -112,3 +112,34 @@ EOF
 )"
     sleep 5
 }
+
+# createPassboltSecretV1 <name>
+function createPassboltSecretV1() {
+    createPassboltSecret "$(cat <<EOF
+apiVersion: passbolt.tagesspiegel.de/v1
+kind: PassboltSecret
+metadata:
+  name: ${1}
+spec:
+  leaveOnDelete: false
+  secretType: Opaque
+  passboltSecrets:
+    s3_access_key:
+      id: 184734ea-8be3-4f5a-ba6c-5f4b3c0603e8
+      field: username
+    s3_secret_key:
+      id: 184734ea-8be3-4f5a-ba6c-5f4b3c0603e8
+      field: password
+    s3_endpoint:
+      id: 184734ea-8be3-4f5a-ba6c-5f4b3c0603e8
+      field: uri
+    dsn:
+      id: 184734ea-8be3-4f5a-ba6c-5f4b3c0603e8
+      value: postgres://{{.Username}}@{{.URI}}/passbolt?sslmode=disable&password={{.Password}}&connect_timeout=10
+  plainTextFields:
+    key: value
+    foo: bar
+EOF
+)"
+    sleep 5
+}

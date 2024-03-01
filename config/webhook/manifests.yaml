@@ -10,14 +10,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-passbolt-tagesspiegel-de-v1alpha3-passboltsecret
+      path: /mutate-passbolt-tagesspiegel-de-v1-passboltsecret
   failurePolicy: Fail
   name: mpassboltsecret.tagesspiegel.de
   rules:
   - apiGroups:
     - passbolt.tagesspiegel.de
     apiVersions:
-    - v1alpha3
+    - v1
     operations:
     - CREATE
     - UPDATE
@@ -36,14 +36,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-passbolt-tagesspiegel-de-v1alpha3-passboltsecret
+      path: /validate-passbolt-tagesspiegel-de-v1-passboltsecret
   failurePolicy: Fail
   name: vpassboltsecret.tagesspiegel.de
   rules:
   - apiGroups:
     - passbolt.tagesspiegel.de
     apiVersions:
-    - v1alpha3
+    - v1
     operations:
     - CREATE
     - UPDATE

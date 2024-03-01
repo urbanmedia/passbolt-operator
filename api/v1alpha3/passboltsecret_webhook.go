@@ -17,110 +17,89 @@ limitations under the License.
 package v1alpha3
 
 import (
-	"errors"
-	"fmt"
-
+	v1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-)
-
-var (
-	ErrInvalidSecretType              = errors.New("invalid secret type")
-	ErrPassboltSecretNameIsRequired   = errors.New("passboltSecretName is required for secret type")
-	ErrSecretsAreNotAllowed           = errors.New("secrets are not allowed")
-	ErrFieldAndValueAreNotAllowed     = errors.New("field and value are not allowed")
-	ErrFieldOrValueIsRequired         = errors.New("field or value is required")
-	ErrSecretsAreRequired             = errors.New("secrets are required")
-	ErrPassboltSecretNameIsNotAllowed = errors.New("passboltSecretName is not allowed")
 )
 
 // log is for logging in this package.
 var passboltsecretlog = logf.Log.WithName("passboltsecret-resource")
 
-func (r *PassboltSecret) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
+// ConvertTo converts this PassboltSecret to the Hub version (v1).
+func (src *PassboltSecret) ConvertTo(dstRaw conversion.Hub) error {
+	passboltsecretlog.V(100).Info("converting PassboltSecret v1alpha3 to v1")
+	dst := dstRaw.(*v1.PassboltSecret)
+	dst.ObjectMeta = src.ObjectMeta
+	src.Spec.LeaveOnDelete = dst.Spec.LeaveOnDelete
+	dst.Spec.SecretType = src.Spec.SecretType
 
-// +kubebuilder:webhook:path=/mutate-passbolt-tagesspiegel-de-v1alpha3-passboltsecret,mutating=true,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1alpha3,name=mpassboltsecret.tagesspiegel.de,admissionReviewVersions=v1
-
-var _ webhook.Defaulter = &PassboltSecret{}
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *PassboltSecret) Default() {
-	passboltsecretlog.Info("default", "name", r.Name)
-	if r.Spec.SecretType == "" || (r.Spec.SecretType != corev1.SecretTypeOpaque && r.Spec.SecretType != corev1.SecretTypeDockerConfigJson) {
-		r.Spec.SecretType = corev1.SecretTypeOpaque
-	}
-}
-
-// +kubebuilder:webhook:path=/validate-passbolt-tagesspiegel-de-v1alpha3-passboltsecret,mutating=false,failurePolicy=fail,sideEffects=None,groups=passbolt.tagesspiegel.de,resources=passboltsecrets,verbs=create;update,versions=v1alpha3,name=vpassboltsecret.tagesspiegel.de,admissionReviewVersions=v1
-
-var _ webhook.Validator = &PassboltSecret{}
-
-func (r *PassboltSecret) validatePassboltSecret() error {
-	switch r.Spec.SecretType {
-	case corev1.SecretTypeOpaque:
-		if r.Spec.PassboltSecretID != nil {
-			return fmt.Errorf("%w for secret %s.%s type %s", ErrPassboltSecretNameIsNotAllowed, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
-		}
-		if len(r.Spec.PassboltSecrets) == 0 {
-			return fmt.Errorf("%w for secret %s.%s type %s", ErrSecretsAreRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
-		}
-		// check if only FieldName or Value is set
-		for _, secret := range r.Spec.PassboltSecrets {
-			if secret.Field == "" && secret.Value == nil {
-				return fmt.Errorf("%w for secret %s.%s and field %v", ErrFieldOrValueIsRequired, r.GetName(), r.GetNamespace(), secret)
-			}
-			if secret.Field != "" && secret.Value != nil {
-				return fmt.Errorf("%w for secret %s.%s and field %v", ErrFieldAndValueAreNotAllowed, r.GetName(), r.GetNamespace(), secret)
+	// migrate secrets of type Opaque
+	if src.Spec.SecretType == corev1.SecretTypeOpaque {
+		dst.Spec.PassboltSecrets = make(map[string]v1.PassboltSecretRef)
+		for k, v := range src.Spec.PassboltSecrets {
+			dst.Spec.PassboltSecrets[k] = v1.PassboltSecretRef{
+				ID:    v.ID,
+				Field: v1.FieldName(v.Field),
+				Value: v.Value,
 			}
 		}
-		return nil
-	case corev1.SecretTypeDockerConfigJson:
-		if r.Spec.PassboltSecretID == nil {
-			return fmt.Errorf("%w for secret %s.%s: %s", ErrPassboltSecretNameIsRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
-		}
-		if *r.Spec.PassboltSecretID == "" {
-			return fmt.Errorf("%w for secret %s.%s: %s", ErrPassboltSecretNameIsRequired, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
-		}
-		if len(r.Spec.PassboltSecrets) > 0 {
-			return fmt.Errorf("%w for secret %s.%s type %s", ErrSecretsAreNotAllowed, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
-		}
-		return nil
-	default:
-		return fmt.Errorf("%w %s.%s: %s", ErrInvalidSecretType, r.GetName(), r.GetNamespace(), r.Spec.SecretType)
+		dst.Spec.PlainTextFields = src.Spec.PlainTextFields
 	}
+
+	// migrate secrets of type kubernetes.io/dockerconfigjson
+	if src.Spec.SecretType == corev1.SecretTypeDockerConfigJson {
+		dst.Spec.PassboltSecretID = src.Spec.PassboltSecretID
+	}
+
+	dst.Status.LastSync = src.Status.LastSync
+	dst.Status.SyncStatus = v1.SyncStatus(src.Status.SyncStatus)
+	dst.Status.SyncErrors = make([]v1.SyncError, len(src.Status.SyncErrors))
+	for _, v := range src.Status.SyncErrors {
+		dst.Status.SyncErrors = append(dst.Status.SyncErrors, v1.SyncError{
+			Message:          v.Message,
+			SecretKey:        v.SecretKey,
+			PassboltSecretID: v.PassboltSecretID,
+			Time:             v.Time,
+		})
+	}
+	return nil
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *PassboltSecret) ValidateCreate() (admission.Warnings, error) {
-	passboltsecretlog.Info("validate create", "name", r.Name)
-	if err := r.validatePassboltSecret(); err != nil {
-		return nil, err
-	}
-	return nil, nil
-}
+// ConvertFrom converts from the Hub version (v1alpha2) to this version.
+func (dst *PassboltSecret) ConvertFrom(srcRaw conversion.Hub) error {
+	passboltsecretlog.V(100).Info("converting from PassboltSecret v1 to v1alpha2")
+	src := srcRaw.(*v1.PassboltSecret)
+	dst.ObjectMeta = src.ObjectMeta
+	dst.Spec.LeaveOnDelete = src.Spec.LeaveOnDelete
+	dst.Spec.SecretType = src.Spec.SecretType
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *PassboltSecret) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	passboltsecretlog.Info("validate update", "name", r.Name)
-	if err := r.validatePassboltSecret(); err != nil {
-		return nil, err
+	if src.Spec.SecretType == corev1.SecretTypeOpaque {
+		dst.Spec.PassboltSecrets = make(map[string]PassboltSecretRef)
+		for i, s := range src.Spec.PassboltSecrets {
+			dst.Spec.PassboltSecrets[i] = PassboltSecretRef{
+				ID:    s.ID,
+				Field: FieldName(s.Field),
+				Value: s.Value,
+			}
+		}
+		dst.Spec.PlainTextFields = src.Spec.PlainTextFields
 	}
-	return nil, nil
-}
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *PassboltSecret) ValidateDelete() (admission.Warnings, error) {
-	passboltsecretlog.Info("validate delete", "name", r.Name)
-	if err := r.validatePassboltSecret(); err != nil {
-		return nil, err
+	if src.Spec.SecretType == corev1.SecretTypeDockerConfigJson {
+		dst.Spec.PassboltSecretID = src.Spec.PassboltSecretID
 	}
-	return nil, nil
+
+	dst.Status.LastSync = src.Status.LastSync
+	dst.Status.SyncStatus = SyncStatus(src.Status.SyncStatus)
+	dst.Status.SyncErrors = make([]SyncError, len(src.Status.SyncErrors))
+	for _, se := range src.Status.SyncErrors {
+		dst.Status.SyncErrors = append(dst.Status.SyncErrors, SyncError{
+			Message:          se.Message,
+			PassboltSecretID: se.PassboltSecretID,
+			SecretKey:        se.SecretKey,
+			Time:             se.Time,
+		})
+	}
+	return nil
 }

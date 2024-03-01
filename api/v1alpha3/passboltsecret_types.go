@@ -116,9 +116,9 @@ type PassboltSecretStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:storageversion
 //+kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.syncStatus`
 //+kubebuilder:printcolumn:name="Last Sync",type=string,JSONPath=`.status.lastSync`
+//+kubebuilder:deprecatedversion:warning=This version is deprecated. Use v1 instead.
 
 // PassboltSecret is the Schema for the passboltsecrets API
 type PassboltSecret struct {
@@ -128,9 +128,6 @@ type PassboltSecret struct {
 	Spec   PassboltSecretSpec   `json:"spec,omitempty"`
 	Status PassboltSecretStatus `json:"status,omitempty"`
 }
-
-// Hub marks this type as a conversion hub.
-func (*PassboltSecret) Hub() {}
 
 //+kubebuilder:object:root=true
 
