@@ -11,7 +11,7 @@ source "$(dirname $0)/lib.sh"
 ########## Test 1 ##########
 ############################
 api_version="v1alpha2"
-echo -e "${color_magenta}2: Testing API version: ${api_version}${color_reset}"
+echo -e "${color_magenta}1: Testing API version: ${api_version}${color_reset}"
 secret_name="${api_version}-simple"
 createPassboltSecretV1alpha2 ${secret_name}
 
@@ -38,7 +38,7 @@ compareLength "4" ${payload_length}
 ########## Test 2 ##########
 ############################
 api_version="v1alpha3"
-echo -e "${color_magenta}3: Testing API version: ${api_version}${color_reset}"
+echo -e "${color_magenta}2: Testing API version: ${api_version}${color_reset}"
 secret_name="${api_version}-simple"
 createPassboltSecretV1alpha3 ${secret_name}
 
