@@ -7,7 +7,7 @@ toolchain go1.21.0
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/google/go-cmp v0.6.0
-	github.com/onsi/ginkgo/v2 v2.14.0
+	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.30.0
 	github.com/passbolt/go-passbolt v0.7.0
 	github.com/prometheus/client_golang v1.19.0
