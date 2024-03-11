@@ -198,17 +198,14 @@ func (c *Client) GetCache() map[string]string {
 	return c.secretCache
 }
 
-// GetSecret retrieves the secret value for the given secret name.
-// Under the hook, this function queries the internal cache for the secret ID by name.
-// If the secret is not in the cache, an error is returned.
-// If the secret is in the cache, the secret is retrieved from passbolt.
+// GetSecret retrieves the secret value for the given secret ID.
 func (c *Client) GetSecret(ctx context.Context, id string) (*PassboltSecretDefinition, error) {
 	passboltSecretGetAttemptsTotal.Inc()
 	// retrieve the secret
 	folderParentID, name, username, uri, pw, description, err := helper.GetResource(ctx, c.passboltClient, id)
 	if err != nil {
 		passboltSecretGetFailureAttemptsTotal.Inc()
-		return nil, fmt.Errorf("failed to get secret with name %q: %w", name, err)
+		return nil, fmt.Errorf("failed to get secret from Passbolt with ID %q: %w", id, err)
 	}
 	secret := &PassboltSecretDefinition{
 		Username:       username,
