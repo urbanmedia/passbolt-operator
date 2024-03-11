@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
+	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,7 +128,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	err = passboltv1alpha3.AddToScheme(scheme)
+	err = passboltv1.AddToScheme(scheme)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestUpdateSecret(t *testing.T) {
 		ctx    context.Context
 		clnt   *passbolt.Client
 		scheme *runtime.Scheme
-		pbscrt *passboltv1alpha3.PassboltSecret
+		pbscrt *passboltv1.PassboltSecret
 		secret *corev1.Secret
 	}
 	tests := []struct {
@@ -157,12 +157,12 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha3.PassboltSecret{
+				pbscrt: &passboltv1.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha3.PassboltSecretSpec{
+					Spec: passboltv1.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeDockerConfigJson,
 						PassboltSecretID: func() *string {
 							s := "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8"
@@ -205,12 +205,12 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha3.PassboltSecret{
+				pbscrt: &passboltv1.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha3.PassboltSecretSpec{
+					Spec: passboltv1.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeDockerConfigJson,
 						PassboltSecretID: func() *string {
 							s := "APP_EXAMPLE_4"
@@ -236,17 +236,17 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha3.PassboltSecret{
+				pbscrt: &passboltv1.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha3.PassboltSecretSpec{
+					Spec: passboltv1.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
-						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
 							"test": {
 								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
-								Field: passboltv1alpha3.FieldNameUsername,
+								Field: passboltv1.FieldNameUsername,
 							},
 						},
 					},
@@ -286,14 +286,14 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha3.PassboltSecret{
+				pbscrt: &passboltv1.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha3.PassboltSecretSpec{
+					Spec: passboltv1.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
-						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
 							"test": {
 								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 								Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/sample"; return &s }(),
@@ -336,17 +336,17 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha3.PassboltSecret{
+				pbscrt: &passboltv1.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha3.PassboltSecretSpec{
+					Spec: passboltv1.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
-						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
 							"test": {
 								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
-								Field: passboltv1alpha3.FieldNameUsername,
+								Field: passboltv1.FieldNameUsername,
 							},
 						},
 						PlainTextFields: map[string]string{
@@ -390,14 +390,14 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha3.PassboltSecret{
+				pbscrt: &passboltv1.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha3.PassboltSecretSpec{
+					Spec: passboltv1.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeOpaque,
-						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
 							"test": {
 								ID: "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 							},
@@ -422,17 +422,17 @@ func TestUpdateSecret(t *testing.T) {
 				ctx:    context.Background(),
 				clnt:   client,
 				scheme: scheme,
-				pbscrt: &passboltv1alpha3.PassboltSecret{
+				pbscrt: &passboltv1.PassboltSecret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
-					Spec: passboltv1alpha3.PassboltSecretSpec{
+					Spec: passboltv1.PassboltSecretSpec{
 						SecretType: corev1.SecretTypeBasicAuth,
-						PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
 							"test": {
 								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
-								Field: passboltv1alpha3.FieldNameUsername,
+								Field: passboltv1.FieldNameUsername,
 							},
 						},
 					},
