@@ -37,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
-	"github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	passboltv1alpha2 "github.com/urbanmedia/passbolt-operator/api/v1alpha2"
 	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
 	"github.com/urbanmedia/passbolt-operator/internal/controller"
@@ -149,8 +148,8 @@ func main() {
 	}
 
 	// initialize passbolt client cache hit functions
-	v1alpha2.GetSecretID = clnt.GetSecretID
-	v1alpha2.GetSecretName = clnt.GetSecretName
+	passboltv1alpha2.GetSecretID = clnt.GetSecretID
+	passboltv1alpha2.GetSecretName = clnt.GetSecretName
 
 	// initial cache load
 	err = clnt.LoadCache(ctx)
