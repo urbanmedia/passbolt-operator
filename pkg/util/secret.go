@@ -60,6 +60,12 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 					}
 				}
 
+				// TODO: normally this should not be necessary because we already assigned an empty map
+				// TODO: for some reason, it is necessary to check if the map is nil at this point
+				if secret.Data == nil {
+					secret.Data = make(map[string][]byte)
+				}
+
 				switch {
 				// check if field is set
 				// if field is set, get field value from passbolt secret and set it as kubernetes secret value
