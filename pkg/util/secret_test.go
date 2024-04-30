@@ -184,7 +184,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							APIVersion:         "passbolt.tagesspiegel.de/v1",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -265,7 +265,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							APIVersion:         "passbolt.tagesspiegel.de/v1",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -315,7 +315,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							APIVersion:         "passbolt.tagesspiegel.de/v1",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -368,7 +368,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							APIVersion:         "passbolt.tagesspiegel.de/v1",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -485,7 +485,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							APIVersion:         "passbolt.tagesspiegel.de/v1",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -534,7 +534,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							APIVersion:         "passbolt.tagesspiegel.de/v1",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
@@ -577,7 +577,7 @@ func TestUpdateSecret(t *testing.T) {
 					Namespace: "default",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1alpha3",
+							APIVersion:         "passbolt.tagesspiegel.de/v1",
 							Kind:               "PassboltSecret",
 							Name:               "test",
 							Controller:         func() *bool { b := true; return &b }(),
