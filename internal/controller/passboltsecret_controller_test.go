@@ -24,7 +24,7 @@ import (
 	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 
-	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
+	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,14 +43,14 @@ var _ = Describe("Run Controller", func() {
 	gomega.SetDefaultEventuallyTimeout(timeout)
 	gomega.SetDefaultEventuallyPollingInterval(interval)
 
-	passboltSecretV1Alpha3 := &passboltv1alpha3.PassboltSecret{
+	passboltSecretV1Alpha3 := &passboltv1.PassboltSecret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: passboltv1alpha3.PassboltSecretSpec{
+		Spec: passboltv1.PassboltSecretSpec{
 			LeaveOnDelete: false,
-			PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+			PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
 				"amqp_dsn": {
 					ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 					Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/vhost"; return &s }(),
@@ -96,11 +96,11 @@ var _ = Describe("Run Controller", func() {
 			time.Sleep(5 * time.Second)
 
 			By("By checking, if PassboltSecret can be retrieved")
-			pbGetSecret := &passboltv1alpha3.PassboltSecret{}
+			pbGetSecret := &passboltv1.PassboltSecret{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pbGetSecret)).Should(Succeed())
 
 			By("By checking if PassboltSecret has the correct sync status")
-			Expect(pbGetSecret.Status.SyncStatus).Should(Equal(passboltv1alpha3.SyncStatusSuccess))
+			Expect(pbGetSecret.Status.SyncStatus).Should(Equal(passboltv1.SyncStatusSuccess))
 		})
 
 		It("Secret", func() {
@@ -120,7 +120,7 @@ var _ = Describe("Run Controller", func() {
 			// delete the passbolt secret after the test
 			Expect(k8sClient.Delete(context.Background(), passboltSecretV1Alpha3)).Should(Succeed())
 			time.Sleep(time.Second * 5)
-			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &passboltv1alpha3.PassboltSecret{})).ShouldNot(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &passboltv1.PassboltSecret{})).ShouldNot(Succeed())
 			time.Sleep(time.Second * 5)
 		})
 	})

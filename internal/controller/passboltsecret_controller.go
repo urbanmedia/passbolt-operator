@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
+	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	"github.com/urbanmedia/passbolt-operator/pkg/util"
 )
@@ -69,7 +69,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	defer logr.Info("finished reconciliation", "name", req.NamespacedName)
 
 	// get passbolt secret resource from Kubernetes
-	secret := &passboltv1alpha3.PassboltSecret{}
+	secret := &passboltv1.PassboltSecret{}
 	err := r.Client.Get(ctx, req.NamespacedName, secret)
 	if err != nil {
 		if err = client.IgnoreNotFound(err); err != nil {
@@ -78,7 +78,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return errResult, err
 	}
 	// cleanup status
-	secret.Status.SyncErrors = []passboltv1alpha3.SyncError{}
+	secret.Status.SyncErrors = []passboltv1.SyncError{}
 
 	if secret.Spec.PassboltSecretID == nil && secret.Spec.PassboltSecrets == nil && secret.Spec.PlainTextFields == nil {
 		return errResult, fmt.Errorf("no passbolt secret id, passbolt secret references or plain text fields defined")
@@ -87,8 +87,8 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// make sure that the secret type is supported
 	if secret.Spec.SecretType != corev1.SecretTypeOpaque && secret.Spec.SecretType != corev1.SecretTypeDockerConfigJson {
 		logr.Info("unsupported secret type", "type", secret.Spec.SecretType)
-		secret.Status.SyncStatus = passboltv1alpha3.SyncStatusError
-		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1alpha3.SyncError{
+		secret.Status.SyncStatus = passboltv1.SyncStatusError
+		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1.SyncError{
 			Message: fmt.Sprintf("unsupported secret type %q", secret.Spec.SecretType),
 			Time:    metav1.Now(),
 		})
@@ -112,8 +112,8 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	opRslt, err := controllerutil.CreateOrUpdate(ctx, r.Client, k8sSecret, util.UpdateSecret(ctx, r.PassboltClient, r.Scheme, secret, k8sSecret))
 	if err != nil {
-		if snErr, ok := err.(passboltv1alpha3.SyncError); ok {
-			secret.Status.SyncStatus = passboltv1alpha3.SyncStatusError
+		if snErr, ok := err.(passboltv1.SyncError); ok {
+			secret.Status.SyncStatus = passboltv1.SyncStatusError
 			secret.Status.SyncErrors = append(secret.Status.SyncErrors, snErr)
 			if err := r.Client.Status().Update(ctx, secret); err != nil {
 				return errResult, err
@@ -124,14 +124,14 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	// if the secret was not changed and the status is already success, we can skip the update
-	if opRslt == controllerutil.OperationResultNone && secret.Status.SyncStatus == passboltv1alpha3.SyncStatusSuccess {
+	if opRslt == controllerutil.OperationResultNone && secret.Status.SyncStatus == passboltv1.SyncStatusSuccess {
 		// secret was not changed
 		logr.V(10).Info("secret was not changed! skipping... ")
 		return ctrl.Result{}, nil
 	}
 
 	// update status
-	secret.Status.SyncStatus = passboltv1alpha3.SyncStatusSuccess
+	secret.Status.SyncStatus = passboltv1.SyncStatusSuccess
 	secret.Status.LastSync = metav1.Now()
 	err = r.Client.Status().Update(ctx, secret)
 	if err != nil {
@@ -144,7 +144,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 // SetupWithManager sets up the controller with the Manager.
 func (r *PassboltSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&passboltv1alpha3.PassboltSecret{}).
+		For(&passboltv1.PassboltSecret{}).
 		Owns(&corev1.Secret{}).
 		Complete(r)
 }

@@ -25,7 +25,7 @@ import (
 	"github.com/passbolt/go-passbolt/api"
 	"github.com/passbolt/go-passbolt/helper"
 	"github.com/prometheus/client_golang/prometheus"
-	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
+	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -90,13 +90,13 @@ type PassboltSecretDefinition struct {
 }
 
 // FieldValue returns the value of the given field by name.
-func (p PassboltSecretDefinition) FieldValue(fieldName passboltv1alpha3.FieldName) string {
+func (p PassboltSecretDefinition) FieldValue(fieldName passboltv1.FieldName) string {
 	switch fieldName {
-	case passboltv1alpha3.FieldNameUsername:
+	case passboltv1.FieldNameUsername:
 		return p.Username
-	case passboltv1alpha3.FieldNameUri:
+	case passboltv1.FieldNameUri:
 		return p.URI
-	case passboltv1alpha3.FieldNamePassword:
+	case passboltv1.FieldNamePassword:
 		return p.Password
 	default:
 		return ""

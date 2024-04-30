@@ -9,7 +9,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
+	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	"github.com/urbanmedia/passbolt-operator/pkg/passbolt"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,8 +19,7 @@ import (
 
 // UpdateSecret updates the kubernetes secret with the data from passbolt
 // The thrown error is of type SyncError
-func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Scheme, pbscrt *passboltv1alpha3.PassboltSecret, secret *corev1.Secret) func() error {
-	fmt.Println(pbscrt.Spec.SecretType)
+func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Scheme, pbscrt *passboltv1.PassboltSecret, secret *corev1.Secret) func() error {
 	secret.Data = make(map[string][]byte)
 	return func() error {
 		switch pbscrt.Spec.SecretType {
@@ -28,7 +27,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 			// get secret from passbolt
 			secretData, err := clnt.GetSecret(ctx, *pbscrt.Spec.PassboltSecretID)
 			if err != nil {
-				return passboltv1alpha3.SyncError{
+				return passboltv1.SyncError{
 					Message:          err.Error(),
 					PassboltSecretID: *pbscrt.Spec.PassboltSecretID,
 					Time:             v1.Now(),
@@ -36,7 +35,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 			}
 			dockerConfigJson, err := getSecretDockerConfigJson(secretData)
 			if err != nil {
-				return passboltv1alpha3.SyncError{
+				return passboltv1.SyncError{
 					Message:          err.Error(),
 					PassboltSecretID: *pbscrt.Spec.PassboltSecretID,
 					Time:             v1.Now(),
@@ -52,7 +51,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 			for secretKeyName, pbSecret := range pbscrt.Spec.PassboltSecrets {
 				secretData, err := clnt.GetSecret(ctx, pbSecret.ID)
 				if err != nil {
-					return passboltv1alpha3.SyncError{
+					return passboltv1.SyncError{
 						Message:          err.Error(),
 						PassboltSecretID: pbSecret.ID,
 						SecretKey:        secretKeyName,
@@ -62,9 +61,9 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 
 				// TODO: normally this should not be necessary because we already assigned an empty map
 				// TODO: for some reason, it is necessary to check if the map is nil at this point
-				if secret.Data == nil {
-					secret.Data = make(map[string][]byte)
-				}
+				// if secret.Data == nil {
+				// 	secret.Data = make(map[string][]byte)
+				// }
 
 				switch {
 				// check if field is set
@@ -77,7 +76,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 				case pbSecret.Value != nil:
 					bts, err := getSecretTemplateValueData(*pbSecret.Value, secretData)
 					if err != nil {
-						return passboltv1alpha3.SyncError{
+						return passboltv1.SyncError{
 							Message:          err.Error(),
 							PassboltSecretID: pbSecret.ID,
 							SecretKey:        secretKeyName,
@@ -88,7 +87,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 					continue
 					// neither field nor value is set
 				default:
-					return passboltv1alpha3.SyncError{
+					return passboltv1.SyncError{
 						Message:          "either field or value must be set",
 						PassboltSecretID: pbSecret.ID,
 						SecretKey:        secretKeyName,
@@ -98,7 +97,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 			}
 		// secret type is not supported
 		default:
-			return passboltv1alpha3.SyncError{
+			return passboltv1.SyncError{
 				Message: fmt.Sprintf("secret type %s is not supported", pbscrt.Spec.SecretType),
 				Time:    v1.Now(),
 			}
@@ -108,7 +107,7 @@ func UpdateSecret(ctx context.Context, clnt *passbolt.Client, scheme *runtime.Sc
 			// set owner reference
 			err := ctrl.SetControllerReference(pbscrt, secret, scheme)
 			if err != nil {
-				return passboltv1alpha3.SyncError{
+				return passboltv1.SyncError{
 					Message: err.Error(),
 					Time:    v1.Now(),
 				}
