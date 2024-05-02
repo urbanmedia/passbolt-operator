@@ -21,7 +21,6 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 
 	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
@@ -40,10 +39,10 @@ var _ = Describe("Run Controller", func() {
 		namespace = "default"
 	)
 
-	gomega.SetDefaultEventuallyTimeout(timeout)
-	gomega.SetDefaultEventuallyPollingInterval(interval)
+	SetDefaultEventuallyTimeout(timeout)
+	SetDefaultEventuallyPollingInterval(interval)
 
-	passboltSecretV1Alpha3 := &passboltv1.PassboltSecret{
+	passboltSecretV1 := &passboltv1.PassboltSecret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -85,13 +84,13 @@ var _ = Describe("Run Controller", func() {
 		})
 	})
 
-	Context("Version v1alpha3", func() {
+	Context("Version v1", func() {
 		It("PassboltSecret", func() {
 			// create the passbolt secret before the test
 			By("By checking the PassboltSecret has been created")
 			// test if the passbolt secret is created
 			ctx := context.Background()
-			Expect(k8sClient.Create(ctx, passboltSecretV1Alpha3)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, passboltSecretV1)).Should(Succeed())
 
 			time.Sleep(5 * time.Second)
 
@@ -109,7 +108,7 @@ var _ = Describe("Run Controller", func() {
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, secret)).Should(Succeed())
 
 			By("By checking if Secret has the correct length")
-			Expect(secret.Data).Should(HaveLen(len(passboltSecretV1Alpha3.Spec.PassboltSecrets) + len(passboltSecretV1Alpha3.Spec.PlainTextFields)))
+			Expect(secret.Data).Should(HaveLen(len(passboltSecretV1.Spec.PassboltSecrets) + len(passboltSecretV1.Spec.PlainTextFields)))
 
 			By("By checking if Secret has the correct keys")
 			Eventually(secret.Data).Should(HaveKey("amqp_dsn"))
@@ -118,7 +117,7 @@ var _ = Describe("Run Controller", func() {
 
 		It("Should delete", func() {
 			// delete the passbolt secret after the test
-			Expect(k8sClient.Delete(context.Background(), passboltSecretV1Alpha3)).Should(Succeed())
+			Expect(k8sClient.Delete(context.Background(), passboltSecretV1)).Should(Succeed())
 			time.Sleep(time.Second * 5)
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &passboltv1.PassboltSecret{})).ShouldNot(Succeed())
 			time.Sleep(time.Second * 5)
