@@ -264,4 +264,4 @@ If you discover a security vulnerability within this project, please use issue f
 
 ## Support
 
-If you need help with Passbolt, please contact [Passbolt Support](https://www.passbolt.com/support).
+If you need help with Passbolt, please contact [Passbolt Support](https://www.passbolt.com/contact/support).
