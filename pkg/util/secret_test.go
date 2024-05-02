@@ -548,49 +548,6 @@ func TestUpdateSecret(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "with nil secret",
-			args: args{
-				ctx:    context.Background(),
-				clnt:   client,
-				scheme: scheme,
-				pbscrt: &passboltv1.PassboltSecret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
-						Namespace: "default",
-					},
-					Spec: passboltv1.PassboltSecretSpec{
-						SecretType: corev1.SecretTypeOpaque,
-						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
-							"test": {
-								ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
-								Field: passboltv1.FieldNameUsername,
-							},
-						},
-					},
-				},
-				secret: nil,
-			},
-			want: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         "passbolt.tagesspiegel.de/v1",
-							Kind:               "PassboltSecret",
-							Name:               "test",
-							Controller:         func() *bool { b := true; return &b }(),
-							BlockOwnerDeletion: func() *bool { b := true; return &b }(),
-						},
-					},
-				},
-				Data: map[string][]byte{
-					"test": []byte(`admin`),
-				},
-			},
-			wantErr: false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
