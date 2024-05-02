@@ -21,10 +21,9 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 
-	passboltv1alpha3 "github.com/urbanmedia/passbolt-operator/api/v1alpha3"
+	passboltv1 "github.com/urbanmedia/passbolt-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,17 +39,17 @@ var _ = Describe("Run Controller", func() {
 		namespace = "default"
 	)
 
-	gomega.SetDefaultEventuallyTimeout(timeout)
-	gomega.SetDefaultEventuallyPollingInterval(interval)
+	SetDefaultEventuallyTimeout(timeout)
+	SetDefaultEventuallyPollingInterval(interval)
 
-	passboltSecretV1Alpha3 := &passboltv1alpha3.PassboltSecret{
+	passboltSecretV1 := &passboltv1.PassboltSecret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: passboltv1alpha3.PassboltSecretSpec{
+		Spec: passboltv1.PassboltSecretSpec{
 			LeaveOnDelete: false,
-			PassboltSecrets: map[string]passboltv1alpha3.PassboltSecretRef{
+			PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
 				"amqp_dsn": {
 					ID:    "184734ea-8be3-4f5a-ba6c-5f4b3c0603e8",
 					Value: func() *string { s := "amqp://{{ .Username }}:{{ .Password }}@{{ .URI }}/vhost"; return &s }(),
@@ -85,22 +84,22 @@ var _ = Describe("Run Controller", func() {
 		})
 	})
 
-	Context("Version v1alpha3", func() {
+	Context("Version v1", func() {
 		It("PassboltSecret", func() {
 			// create the passbolt secret before the test
 			By("By checking the PassboltSecret has been created")
 			// test if the passbolt secret is created
 			ctx := context.Background()
-			Expect(k8sClient.Create(ctx, passboltSecretV1Alpha3)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, passboltSecretV1)).Should(Succeed())
 
 			time.Sleep(5 * time.Second)
 
 			By("By checking, if PassboltSecret can be retrieved")
-			pbGetSecret := &passboltv1alpha3.PassboltSecret{}
+			pbGetSecret := &passboltv1.PassboltSecret{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pbGetSecret)).Should(Succeed())
 
 			By("By checking if PassboltSecret has the correct sync status")
-			Expect(pbGetSecret.Status.SyncStatus).Should(Equal(passboltv1alpha3.SyncStatusSuccess))
+			Expect(pbGetSecret.Status.SyncStatus).Should(Equal(passboltv1.SyncStatusSuccess))
 		})
 
 		It("Secret", func() {
@@ -109,7 +108,7 @@ var _ = Describe("Run Controller", func() {
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, secret)).Should(Succeed())
 
 			By("By checking if Secret has the correct length")
-			Expect(secret.Data).Should(HaveLen(len(passboltSecretV1Alpha3.Spec.PassboltSecrets) + len(passboltSecretV1Alpha3.Spec.PlainTextFields)))
+			Expect(secret.Data).Should(HaveLen(len(passboltSecretV1.Spec.PassboltSecrets) + len(passboltSecretV1.Spec.PlainTextFields)))
 
 			By("By checking if Secret has the correct keys")
 			Eventually(secret.Data).Should(HaveKey("amqp_dsn"))
@@ -118,9 +117,9 @@ var _ = Describe("Run Controller", func() {
 
 		It("Should delete", func() {
 			// delete the passbolt secret after the test
-			Expect(k8sClient.Delete(context.Background(), passboltSecretV1Alpha3)).Should(Succeed())
+			Expect(k8sClient.Delete(context.Background(), passboltSecretV1)).Should(Succeed())
 			time.Sleep(time.Second * 5)
-			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &passboltv1alpha3.PassboltSecret{})).ShouldNot(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &passboltv1.PassboltSecret{})).ShouldNot(Succeed())
 			time.Sleep(time.Second * 5)
 		})
 	})
