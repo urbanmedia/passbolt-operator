@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 env:
-  go_version: 1.21
+  go_version: 1.22
 
 jobs:
   release:
