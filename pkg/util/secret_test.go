@@ -548,6 +548,38 @@ func TestUpdateSecret(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "secret not found in passbolt",
+			args: args{
+				ctx:    context.Background(),
+				clnt:   client,
+				scheme: scheme,
+				pbscrt: &passboltv1.PassboltSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: passboltv1.PassboltSecretSpec{
+						SecretType: corev1.SecretTypeOpaque,
+						PassboltSecrets: map[string]passboltv1.PassboltSecretRef{
+							"test": {
+								ID:    "184734ca-8be3-4f5b-ga6c-5f4v3c0613e8",
+								Field: passboltv1.FieldNameUsername,
+							},
+						},
+					},
+				},
+				secret: &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Type: corev1.SecretTypeOpaque,
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
