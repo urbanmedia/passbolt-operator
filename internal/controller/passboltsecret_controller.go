@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -67,6 +68,11 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	logr := log.FromContext(ctx)
 	logr.Info("starting reconciliation...", "name", req.NamespacedName)
 	defer logr.Info("finished reconciliation", "name", req.NamespacedName)
+	defer func() {
+		if r := recover(); r != nil {
+			logr.Error(errors.New("recovered from panic"), "failed to complete reconciliation", "stacktrace", r)
+		}
+	}()
 
 	// get passbolt secret resource from Kubernetes
 	secret := &passboltv1.PassboltSecret{}
