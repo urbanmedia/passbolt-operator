@@ -20,10 +20,10 @@ spec:
   secretType: Opaque
   passboltSecrets:
     s3_access_key:
-      name: EXAMPLE_APP
+      id: 00000000-0000-0000-0000-000000000000
       field: username
     dsn:
-      name: EXAMPLE_APP
+      id: 00000000-0000-0000-0000-000000000000
       value: postgres://{{ .Username }}@{{ .URI }}/mydb?sslmode=disable&password={{ .Password }}
   plainTextFields:
     key: value
