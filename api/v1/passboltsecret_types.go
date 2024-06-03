@@ -112,6 +112,11 @@ type PassboltSecretStatus struct {
 	LastSync metav1.Time `json:"lastSync"`
 	// SyncErrors is a list of errors that occurred during the last sync.
 	SyncErrors []SyncError `json:"syncErrors,omitempty"`
+	// FailureCount is the number of times the secret failed to sync.
+	// This is used to determine if the secret should be retried.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=0
+	FailureCount int `json:"failureCount,omitempty"`
 }
 
 //+kubebuilder:object:root=true
