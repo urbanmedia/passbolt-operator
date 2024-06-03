@@ -83,6 +83,13 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		return errResult, err
 	}
+
+	if secret.Status.FailureCount >= 3 {
+		// if the secret failed to sync more than 3 times, we stop trying
+		logr.Info("secret failed to sync more than 3 times. stopping sync", "name", secret.GetName(), "namespace", secret.GetNamespace())
+		return ctrl.Result{}, nil
+	}
+
 	// cleanup status
 	secret.Status.SyncErrors = []passboltv1.SyncError{}
 
@@ -94,6 +101,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if secret.Spec.SecretType != corev1.SecretTypeOpaque && secret.Spec.SecretType != corev1.SecretTypeDockerConfigJson {
 		logr.Info("unsupported secret type", "type", secret.Spec.SecretType)
 		secret.Status.SyncStatus = passboltv1.SyncStatusError
+		secret.Status.FailureCount++
 		secret.Status.SyncErrors = append(secret.Status.SyncErrors, passboltv1.SyncError{
 			Message: fmt.Sprintf("unsupported secret type %q", secret.Spec.SecretType),
 			Time:    metav1.Now(),
@@ -120,6 +128,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if err != nil {
 		if snErr, ok := err.(passboltv1.SyncError); ok {
 			secret.Status.SyncStatus = passboltv1.SyncStatusError
+			secret.Status.FailureCount++
 			secret.Status.SyncErrors = append(secret.Status.SyncErrors, snErr)
 			if err := r.Client.Status().Update(ctx, secret); err != nil {
 				return errResult, err
