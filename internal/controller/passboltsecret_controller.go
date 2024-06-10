@@ -89,6 +89,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		logr.Info("secret failed to sync more than 3 times. stopping sync", "name", secret.GetName(), "namespace", secret.GetNamespace())
 		return ctrl.Result{}, nil
 	}
+	errResult.RequeueAfter = time.Duration(2^secret.Status.FailureCount) * (5 * time.Second)
 
 	// cleanup status
 	secret.Status.SyncErrors = []passboltv1.SyncError{}
