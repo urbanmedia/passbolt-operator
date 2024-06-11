@@ -84,11 +84,7 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return errResult, err
 	}
 
-	if secret.Status.FailureCount >= 3 {
-		// if the secret failed to sync more than 3 times, we stop trying
-		logr.Info("secret failed to sync more than 3 times. stopping sync", "name", secret.GetName(), "namespace", secret.GetNamespace())
-		return ctrl.Result{}, nil
-	}
+	// limit the number of retries
 	errResult.RequeueAfter = time.Duration(2^secret.Status.FailureCount) * (5 * time.Second)
 
 	// cleanup status
@@ -127,6 +123,11 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	opRslt, err := controllerutil.CreateOrUpdate(ctx, r.Client, k8sSecret, util.UpdateSecret(ctx, r.PassboltClient, r.Scheme, secret, k8sSecret))
 	if err != nil {
+		if secret.Status.FailureCount >= 3 {
+			// if the secret failed to sync more than 3 times, we stop trying
+			logr.Info("secret failed to sync more than 3 times. stopping sync", "name", secret.GetName(), "namespace", secret.GetNamespace())
+			return ctrl.Result{}, nil
+		}
 		if snErr, ok := err.(passboltv1.SyncError); ok {
 			secret.Status.SyncStatus = passboltv1.SyncStatusError
 			secret.Status.FailureCount++
@@ -138,6 +139,8 @@ func (r *PassboltSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		return errResult, err
 	}
+	// reset failure counter to 0
+	secret.Status.FailureCount = 0
 
 	// if the secret was not changed and the status is already success, we can skip the update
 	if opRslt == controllerutil.OperationResultNone && secret.Status.SyncStatus == passboltv1.SyncStatusSuccess {
