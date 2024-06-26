@@ -143,3 +143,25 @@ EOF
 )"
     sleep 5
 }
+
+# createPassboltSecretV1 <name>
+function createPassboltSecretV1WithSecretNotFound() {
+    createPassboltSecret "$(cat <<EOF
+apiVersion: passbolt.tagesspiegel.de/v1
+kind: PassboltSecret
+metadata:
+  name: ${1}
+spec:
+  leaveOnDelete: false
+  secretType: Opaque
+  passboltSecrets:
+    secret:
+      id: 00000000-0000-0000-0000-000000000000
+      field: username
+  plainTextFields:
+    key: value
+    foo: bar
+EOF
+)"
+    sleep 5
+}
