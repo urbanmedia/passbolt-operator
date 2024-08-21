@@ -218,10 +218,11 @@ jobs:
       fail-fast: false
       matrix:
         kind_node_image:
+          - kindest/node:v1.31.0
+          - kindest/node:v1.30.4
           - kindest/node:v1.29.2
           - kindest/node:v1.28.7
           - kindest/node:v1.27.3
-          - kindest/node:v1.26.6
     steps:
       - name: Install go ${{ env.go_version }}
         uses: actions/setup-go@v5
