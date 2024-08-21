@@ -193,9 +193,12 @@ jobs:
         run: |
           make docker-build
 
+      - name: Pull images
+        run: docker compose pull
+
       - name: Save image
         run: |
-          make docker-save
+          docker save -o manager.tar ${{ env.IMG }} $(docker images -f reference=passbolt/passbolt -f reference=mariadb)
 
       - name: Upload image
         uses: actions/upload-artifact@v4
