@@ -7,7 +7,7 @@ on:
     paths-ignore:
       - "*.md"
       - LICENSE
-      - docker-compose*
+      - docker compose*
       - .dockerignore
       #- .github/
       - .gitignore
@@ -90,7 +90,7 @@ jobs:
           sudo chmod -R a+rw _data/pb_gpg
 
       - name: Start Mysql database container
-        run: docker-compose up -d db
+        run: docker compose up -d db
 
       - name: Install mysql client
         run: |
@@ -110,16 +110,16 @@ jobs:
             --password=P4ssb0lt < _data/passbolt_db.sql
 
       - name: Start the other containers
-        run: docker-compose up -d
+        run: docker compose up -d
 
-      - run: docker-compose ps -a
+      - run: docker compose ps -a
 
       - name: Wait for Passbolt to be ready with a 1 minute timeout
         run: |
           timeout 1m bash -c 'until [[ "$(curl -l -s -o /dev/null -w ''%{http_code}'' http://localhost:8088/auth/login?)" == "200" ]]; do sleep 5; done'
 
       - if: always()
-        run: docker-compose ps -a
+        run: docker compose ps -a
 
       #- if: always()
       #  run: |
@@ -193,9 +193,12 @@ jobs:
         run: |
           make docker-build
 
+      - name: Pull images
+        run: docker compose pull
+
       - name: Save image
         run: |
-          make docker-save
+          docker save -o manager.tar ${{ env.IMG }} $(docker images -q -f reference=passbolt/passbolt -f reference=mariadb)
 
       - name: Upload image
         uses: actions/upload-artifact@v4
@@ -218,10 +221,11 @@ jobs:
       fail-fast: false
       matrix:
         kind_node_image:
+          - kindest/node:v1.31.0
+          - kindest/node:v1.30.4
           - kindest/node:v1.29.2
           - kindest/node:v1.28.7
           - kindest/node:v1.27.3
-          - kindest/node:v1.26.6
     steps:
       - name: Install go ${{ env.go_version }}
         uses: actions/setup-go@v5
@@ -266,7 +270,7 @@ jobs:
           kind load docker-image ${{ env.IMG }} --name passbolt-operator-e2e
 
       - name: Start Mysql database container
-        run: docker-compose up -d db
+        run: docker compose up -d db
 
       - name: Install mysql client
         run: |
@@ -289,7 +293,7 @@ jobs:
           echo "PASSBOLT_HOST=$(hostname -I | awk '{print $1}')" >> $GITHUB_ENV
 
       - name: Start the other containers
-        run: docker-compose up -d
+        run: docker compose up -d
 
       - name: Install Prometheus Operator CRDs
         run: |
@@ -349,3 +353,32 @@ jobs:
         if: always()
         run: |
           kubectl logs --tail 10000 -n ${{ env.KUBERNETES_NAMESPACE }} $(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} | grep passbolt-operator-controller-manager | awk '{print $1}') -c manager
+
+  scan-image:
+    name: scan image
+    runs-on: ubuntu-latest
+    needs:
+      - build-temp-image
+    permissions:
+      contents: write
+    steps:
+      - name: Download image
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.artifact_name }}
+
+      - name: Load image
+        run: |
+          docker load -i manager.tar
+
+      - name: Scan container image
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.IMG }}
+          format: 'github'
+          github-pat: ${{ secrets.GITHUB_TOKEN }}
+          output: 'dependency-results.sbom.json'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
