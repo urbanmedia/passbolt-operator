@@ -14,7 +14,6 @@ on:
       - .gitmodules
       - docs/
       - hack/
-      - Makefile
       - PROJECT
   pull_request:
     branches:
