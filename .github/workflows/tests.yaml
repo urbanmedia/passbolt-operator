@@ -21,7 +21,7 @@ on:
       - "!dependabot/**"
 
 env:
-  go_version: '1.21'
+  go_version: '1.23'
   artifact_name: passbolt-operator
   artifact_bin_name: kubebuilder
   IMG: tagesspiegel/passbolt-operator:dev
