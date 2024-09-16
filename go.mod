@@ -11,9 +11,9 @@ require (
 	github.com/onsi/gomega v1.34.2
 	github.com/passbolt/go-passbolt v0.7.1
 	github.com/prometheus/client_golang v1.20.3
-	k8s.io/api v0.31.0
-	k8s.io/apimachinery v0.31.0
-	k8s.io/client-go v0.31.0
+	k8s.io/api v0.31.1
+	k8s.io/apimachinery v0.31.1
+	k8s.io/client-go v0.31.1
 	sigs.k8s.io/controller-runtime v0.19.0
 )
 
