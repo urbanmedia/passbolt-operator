@@ -371,7 +371,7 @@ jobs:
           docker load -i manager.tar
 
       - name: Scan container image
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.27.0
         with:
           image-ref: ${{ env.IMG }}
           format: 'github'
